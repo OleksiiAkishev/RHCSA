@@ -1,32 +1,12 @@
 # RHCSA
 
-
-
-## Inode
-A structure that contains all properties about file except its name. Every Linux file has an inode. 
-
-## Hard Link
-A name associcated with inode. At initial stage each new file has except one hard link. One same file can have multiple hard links, in order to have it available from different places. File without a hard link, considered as deleted. 
-
-## Symbolic link (soft link) 
-It referes to the name of the file and not to the inode.
-
-symbolic link --> hard link --> inode --> data blocks
-
-to create a link use ln command. 
-
-The link count belongs to the inode, not the filename; after ln newfile linkedfile, the same inode is referenced by two names (newfile and linkedfile), so both show a link count of 2.
-
 ### ls Common Command-Line Options
 a) ls -l: long listing with the persmissions on the files. Not showing hidden files
 b) ls -a: show all files, including hidden.
 c) ls -lrt: sort the files as per modification date, the most recent at the bottom. 
 
-
 ### mv 
 mv is used for moving files/dirs and renaming (note: renaming it is nothing else but copying and deleting original file)
-
-
 
 ### VIM Cheet Sheet
 Esc
@@ -89,4 +69,18 @@ Adds the output of ls (or any other command) in the current file.
 :%s/old/new/g
 Replaces all occurrences of old with new.
 
-## Archive
+# Archive
+
+-   Create archive: tar -cf archivename.tar /files-you-want-to-archive
+-   Add existing file to arhive: tar -rvf <archive_destination> <source_of_what_to_add>
+-   List archive content: tar -tvf <archive>
+-   Extract a content from archive tar -xvf <archive>; 
+    note: either use cd before to go to the destination repo, either use -C option,
+        e.g., tar -xrf <archive> -C <detination_path>
+-   Extract one file from archive: tar -xvf <archive> <file-name_you_want_to_extract>
+    Example: tar -xvf my_archive.tar ./DevOps/RHCSA/.README.md.swp
+    Note: by default ./DevOps/RHCSA/.README.md.swp it is path where tar is looking for the file in archive + it is the path where the file will be extracted.
+    To be able to extract the file to the current localtion, use --strip-components, e.g., tar -xvf my_archive.tar --strip-components=3  ./DevOps/RHCSA/.README.md.swp
+        This will find ./DevOps/RHCSA/.README.md.swp and then it will put it under ./.README.md.swp (current location with the same file name) 
+-   To compress archive file use a gzip command: gzip <file_name> <destination>; note tar did do it when the archive was initially created. 
+-   To uncompress: gunzip <file_name>

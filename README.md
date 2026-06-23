@@ -3,6 +3,7 @@
 # User creation
 useradd <user_name>
 passwd <user_name> probably with sudo
+check of the users, who are they and what they are doing: w
 
 ### Redirects
 a) redirect STDOUT to the same file as STDERR.
@@ -130,3 +131,16 @@ r[aou]t               grep r[aou]t                              Will match the s
 
 -   /var/log/secure ; a useful path where to see the logs related to user sessions (login, etc)
 Ex: with root : tail -f /var/log/secure
+
+-   check the ssh status:
+    systemctl status sshd
+-   enable if not running
+    sudo systemctl enable --now sshd
+-   check sockets:
+    ss -tnpl
+-   Show ip address and route from the current machine
+    ip addr show and ip route 
+-   ping ip of the remote machine
+    ping <ip>
+-   establish connect via ssh from server1 to remote server
+    ssh<user_name>@<remote_server_ip>

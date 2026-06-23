@@ -1,5 +1,9 @@
 # RHCSA
 
+# User creation
+useradd <user_name>
+passwd <user_name> probably with sudo
+
 ### Redirects
 a) redirect STDOUT to the same file as STDERR.
      &> file OR > file 2>&1
@@ -122,3 +126,7 @@ c.r                   grep c.r /etc/passwd                      Will match all t
 r[aou]t               grep r[aou]t                              Will match the strings in the range, like: rat, rot, rut. Which are start with r and ends with t. 
 
 
+# Terminal, SSH
+
+-   /var/log/secure ; a useful path where to see the logs related to user sessions (login, etc)
+Ex: with root : tail -f /var/log/secure

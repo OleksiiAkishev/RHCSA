@@ -144,3 +144,42 @@ Ex: with root : tail -f /var/log/secure
     ping <ip>
 -   establish connect via ssh from server1 to remote server
     ssh<user_name>@<remote_server_ip>
+-   copy from remote to local:
+    scp -r [SOURCE] [DESTINATION]
+    Ex: scp student@192.168.40.134:/remote/path/to/file /local/path/
+-   Alternative safe file transfers
+    stfp <user>@<remote_server>
+    Example:
+    ls -- shows remote dir
+    lls -- shows local dir
+    lpwd -- shows local pwd
+    pwd -- remote pwd
+    go to the local directory from where you want to opy something to remote one and run
+    put ~/projects so, this will copy to the pwd from lpwd 
+
+# Users, groups
+- if user is not suedors, use the following command to add user as suedors:
+    sudo sh -c 'echo" betty ALL=(ALL) ALL" > /etc/sudoers.d/betty'
+    The above command allows full sudo access for betty
+- Allows user amy to create users and reset user passwords, but not for root.
+    sudo sh -c 'echo "amy ALL=/usr/sbin/useradd, /usr/bin/passwd, !/usr/bin/passwd root" > /etc/sudoers.d/amy'
+- create a new user:
+    useradd <user_name>
+- change password for user:
+    sudo passwd <user_name>
+- create a group
+    groupadd <group_name>
+- delete a group
+    groupdel <group_name>
+- modify user to add her/him to the group as secondary group
+    usermod -aG <group_name> <user_name>
+- set a password policy:
+    passwd -n 30 -w 3 -x 90 <user_name>
+        where: -n; password to be used at least for 30 days before changing
+               -w; 3 days before expiry, the user will get a warning
+               -x; The passwoerd will expiry after 90 days 
+
+Note: to print short description of the man for the command:
+- sudo mandb: download and install man DBs
+- man -k <key word> --> outputs the match
+

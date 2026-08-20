@@ -116,7 +116,19 @@ a. Compress the originla archive in /root
 b. Verify the size of the archive after compressing
     ls -lh /root/essentials.tar.gz
 
-# Additional exam objectives
+## Chapter 3. Text files
+
+Task 1. Describe two ways to show line 5 from the /etc/passwd file.
+
+a. Method 1: using head and tail
+    head -n 5 /etc/passwd | tail -n 1
+b. Method 2: using sed (Stream Editor)
+    sed -n '5p' /etc/passwd
+c. Method 3: using awk
+    awk 'NR==5' /etc/passwd
+
+
+# Additional exam objectives --> try to search in the book for the key words as Exam objectives/tips
 
 ## Archive
 

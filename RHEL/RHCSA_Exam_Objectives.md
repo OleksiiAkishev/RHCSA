@@ -122,11 +122,43 @@ Task 1. Describe two ways to show line 5 from the /etc/passwd file.
 
 a. Method 1: using head and tail
     head -n 5 /etc/passwd | tail -n 1
+    Note: in this way tail takes the last line only from the chunk of 5 of head.
 b. Method 2: using sed (Stream Editor)
     sed -n '5p' /etc/passwd
+    Note: the -n tells to sed suppress the output but to show only line 5
 c. Method 3: using awk
     awk 'NR==5' /etc/passwd
+    Note: NR (number of records(lines)) - to print the line when the number is exactly 5.
 
+Task 2. How would you locate all text files on your server that contain the current IP address? Do you need a regular expression to do this?
+
+a. To show the files where match case is occured, use a grep:
+    grep -rl "198.168.1.10"
+        Where:    
+            -r (recursive): Searches through all directories and subdirectories. (I used /etc/ here as a practical example. You could use / for the whole server, but it will take a very long time and throw permission errors).
+            -l (files-with-matches): Tells grep to only print the names of the files containing the IP, rather than printing the actual matching lines.
+
+    Can use without -l as well, to see the lines of matched.
+
+Task 3. You have just used the sed command that replaces all occurrences of the text Administrator with root. Your Windows administrators do not like that very much. How do you revert?
+
+Prerequisites:
+a. Create a sample test file cotaining the word "Administrator"
+    echo "The Server Administrator needs Administrator access." > ~/sed_test.txt
+    # inspect a file
+    cat ~/sed_test.txt
+b. Run a sed to replace "Administrator" with a "root" (with an automatic safety backup)
+    sed -i.bak 's/Administrator/root/g' ~/sed_test.txt
+    # inspect the modified file
+    cat ~/sed_test.txt
+    # inspect the safety backup file created by -i.bak
+    cat ~/sed_test.txt.bak
+
+Revert changes:
+a. Option A. Swap terms with sed
+    sed -i 's/root/Administrator/g' ~/sed_test.txt
+b. Option B. Restore from backup file
+    mv ~/sed_test.txt.bak ~/sed_test.txt 
 
 # Additional exam objectives --> try to search in the book for the key words as Exam objectives/tips
 

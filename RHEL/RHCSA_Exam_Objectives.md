@@ -160,6 +160,35 @@ a. Option A. Swap terms with sed
 b. Option B. Restore from backup file
     mv ~/sed_test.txt.bak ~/sed_test.txt 
 
+Task 4. Assuming that in the ps aux command the fifth line contains information about memory utilization, how would you process the output of that command to show the process that has the heaviest memory utilization first in the results list?
+
+Flags on command:
+sort: Sorts lines of text.
+-k5 (Key): Sorts specifically using column 5.
+-r (Reverse): Sorts in descending order (highest value at the top, instead of lowest).
+-n (Numeric): Tells sort to evaluate numbers numerically (10 comes after 2), rather than alphabetically (10 coming before 2).
+head: Keeps your terminal clean by printing only the top 10 results.
+
+a. Sorting by memory utilization
+    ps aux | sort -k5 -rn | head
+
+Task 5. Which command enables you to filter the sixth column of ps aux output?
+
+a. Print ONLY the 6th column (RSS memory usage in KB)
+    ps aux | awk '{print $6}'
+b. Filtering by Column Value with awk
+    ps aux | awk '$6 > 10000'
+
+Task 6. How do you delete the sixth line from the file ~/myfile?
+
+Notes:
+sed: The stream editor utility.
+-i: Modifies the file in-place (saves the change directly into ~/myfile).
+6d: Instructs sed to target line 6 and delete (d) it.
+
+a. Delete line 6
+   sed -i '6d' test.txt 
+
 # Additional exam objectives --> try to search in the book for the key words as Exam objectives/tips
 
 ## Archive

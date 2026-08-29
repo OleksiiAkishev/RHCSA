@@ -209,3 +209,152 @@ b.List the contents of an archive
 c.Extract an archive 
 d.Compress and uncompress archives
 
+
+# Chapter 9 Managing Softwares
+
+- you have to be able to configure a repository client to specify yourself which repository you want to use, which is an important skill. Telling your server which repository to use is not difficult, but it is important that you know how to do it (for the RHCSA exam, too).
+Tip:
+To learn how to work with repositories and software packages, do not use the repositories that are provided by default. If you have installed RHEL, do not register using subscription-manager. If you overlooked this requirement while installing earlier, you can use subscription-manager unregister to remove all registration.
+
+*This:
+In older versions of RHEL, you needed to memorize how to create a repository client file manually. In RHEL 10, the dnf config-manager tool is available, even in a minimal installation, to create the repository client file for you.
+--> wondering if I need to go in details for that, as I am planning for version 10, not sure I need those knoweledges.
+
+
+If you are are using the dnf config-manager, to disable a gpg check (which loads a lot of additional packages) - modify a file /etc/yum.conf by set the gpgcheck=0
+
+Repositories for the dnf manager are under: /etc/yum.repos.d
+
+Tip:
+For using internal repositories, the security risks are not that high. For that reason, you do not have to know how to work with GPG-signed packages on the RHCSA exam.
+But be aware that it is important to know that working with the external packages introduce the security risks as the package pull executed with root priveledges and the script which will be run in the package - run on the current machine. And if that package was compromised the risk will be high. 
+
+### Exercise 9-1 Creating your own Repository 
+
+Context:
+Windows
+  │
+  │ RHEL ISO file
+  ↓
+VMware
+  │
+  │ virtual CD/DVD drive
+  ↓
+RHEL VM
+  │
+  ↓
+/dev/sr0
+  │
+  │ mount
+  ↓
+/repo
+  │
+  ↓
+RHEL installation files/packages
+  │
+  ↓
+DNF repository
+
+1) what is the /dev/sr0?
+    In the Linux it represents the optical CD/DVD drive
+
+Schematically it is:
+Windows
+└── RHEL-10.x.iso
+       ↓
+   VMware virtual CD/DVD drive
+       ↓
+      RHEL
+       ↓
+    /dev/sr0
+
+Where the iso file remains on Windows. 
+
+2) what does the mount mean?
+Normally Linux is not like windows, you won't see the DVD it is drive F (whatever). Instead Linux attaches the filesystem to a directory of the existing filesystem. 
+Example:
+/
+├── etc
+├── home
+├── var
+├── repo
+
+Then if we mount the DVD to /repo, /dev/sr0 -- mount --> /repo, the contents of the DVD becomes accessible via /repo. And ls /repo shows that content.
+
+Thus:
+/dev/sr0 --> physical/virtual storage device
+mount --> make its filesystem accessible
+/repo --> directory through which we access it
+
+Prequisites for SOlution:
+
+a. Check if the Linux sees the optical device with lsblk (lisk block devices)
+    lsblk
+        output example:
+                                    NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+                        sr0            11:0    1  9.5G  0 rom  /run/media/oleksii_ops/RHEL-10-1-BaseOS-x86_64
+                        nvme0n1       259:0    0   40G  0 disk 
+                        ├─nvme0n1p1   259:1    0    1M  0 part 
+                        ├─nvme0n1p2   259:2    0    1G  0 part /boot
+                        └─nvme0n1p3   259:3    0   39G  0 part 
+                        ├─rhel-root 253:0    0 35.1G  0 lvm  /
+                        └─rhel-swap 253:1    0  3.9G  0 lvm  [SWAP]
+
+where:
+    rom - read only
+    /run/media/oleksii_ops/RHEL-10-1-BaseOS-x86_64 --> current mounted location, the same will be visible with mount command
+
+b. Check the device Node: 
+    ls -l /dev0/sr0
+        Example output:
+        brw-rw----+ 1 root cdrom 11, 0 Aug 27 15:03 /dev/sr0
+        where, b - block device; same as disks/partitions category
+
+
+
+
+c. Check if mounted already:
+    mount
+    OR filter with mount | grep sr0    
+
+
+Output example:
+/dev/sr0 on /run/media/oleksii_ops/RHEL-10-1-BaseOS-x86_64 type iso9660 (ro,nosuid,nodev,relatime,nojoliet,check=s,map=n,blocksize=2048,uid=1000,gid=1000,dmode=500,fmode=400,iocharset=utf8,uhelper=udisks2)
+
+
+Prerequisites summary:
+Windows ISO
+     ↓
+ VMware virtual DVD
+     ↓
+   /dev/sr0
+     ↓
+   mounted at
+     ↓
+/run/media/oleksii_ops/RHEL-10-1-BaseOS-x86_64
+
+Solution to exercise 9-1:
+As per task, it is propossed to mount the /dev/sr0 to the /repo
+
+a. Unmnount the /dev/sr0 from original location
+    sudo umount /dev/sr0, notice it is uMount NOT uNmount
+
+Now if check with lsblk:
+sblk
+NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sr0            11:0    1  9.5G  0 rom  
+
+So, now the /dev/sr0 was unmounted
+
+b. Create a requested mount directory in root
+    sudo mkdir /repo
+
+c. Mount /dev/sr0 manually to /repo
+    sudo mount /dev/sr0 /repo
+
+Output with lsblk:
+sblk
+NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sr0            11:0    1  9.5G  0 rom  /repo
+
+d. Edit /etc/fstab

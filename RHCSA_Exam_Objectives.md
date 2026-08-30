@@ -358,3 +358,36 @@ NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
 sr0            11:0    1  9.5G  0 rom  /repo
 
 d. Edit /etc/fstab
+    1) What is the fstab?
+        fstab (filesystem table) is a configuration file that tells Linux about filesystems that should be mounted. And lies under /etc/fstab, it is a basic instructions list. 
+
+    2) mount vs fstab:
+        mount is command which executes right now, once it has been ran. Normally lost after reboot.
+        fstab defines what should be mounted, where mounted, and how. Persistent
+
+e. Edit /etc/fstab by adding mounting parameters for /repo target
+    sudo echo "/dev/sr0 /repo iso9660 defaults 0 0" >> /etc/fstab
+f. Ensure that the system pick the latest
+    systemctl daemon-reload
+g. Run command for mount with the flag that it will rely on fstab file now
+    mount -a 
+h. Check result:
+    lsblk 
+    OR 
+    mount | grep sr0
+i. Add new repos to the yum.repos.d
+    dnf config-manager --add-repo=file:///repo/BaseOS
+    If system was unregistered, register it as:
+        subscription-namger register
+    Once promted, type user name and password which is used on the Red Hat portal for dev subscription
+
+    if good, add the next repo:
+        dnf config-manager --add-repo=file:///repo/AppStream
+    
+    check if added:
+    sudo ls /etc/yum.repos.d
+
+    Also add this: gpgcheck=0 to the end of both files
+
+j. Check the availability of the new repos:
+    dnf repolist

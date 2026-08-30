@@ -1,0 +1,1 @@
+su switches the user to the specified account, while sudo executes a single command with elevated privileges without switching the user. sudo is considered as more secure command

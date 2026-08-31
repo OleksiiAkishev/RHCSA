@@ -391,3 +391,89 @@ i. Add new repos to the yum.repos.d
 
 j. Check the availability of the new repos:
     dnf repolist
+
+### Exercise 9-2 Working with packages with dnf
+
+a. Check with dnf if the package it is what you are really lookign for.
+    dnf info nmap
+If ok, then install.
+
+a.1 Find the packages with given spec
+    dnf provides <spec_name>
+    dnf provides seinfo
+
+b. Install packages
+    sudo dnf info nmap
+
+b1. To remove packages
+    sudo dnf remove nmap
+        note: can use directly with the -y option for both commands if sure (ideally to not use). 
+
+c. List packages
+    dnf list 
+    Note: it will be big list, use with | less to not flood in the terminal.
+
+    If looking for something specific, also possible:
+        dnf list google* | less
+
+d. TO check which packages are installed on your server
+    dnf list kernel
+
+e. Update packages
+    sudo dnf update nmap
+
+To install a group of packages, rather to install them one by one, when need all them at once, use dnf group/groups/groupinstall. For example for the .NET Development, etc.
+
+f. List available groups
+    dnf group list
+
+g. Check the history of dnf, all registered by the way.
+    dnf history
+
+h. Be in the history the last step can be undone
+    dnf history undo <number_of_the_history_element>
+    dnf history 8
+
+### Exercise 9-3 Working with packages with rpm
+
+Useful
+a. List installed packages on the machine
+    rpm -qa
+
+b. Check for files that specific package has
+    rpm -ql nmap
+    OR
+    rpm -qd nmap ; more shorter and precised
+
+c. Find the package name from where the particular command comes from
+    rpm -qf /bin/ls
+    output: coreutils-9.5-8.el10_2.x86_64 --> show from where the ls come from
+
+d. Query a package for specific option
+    rpm -qp --scripts httpd-2.4.63-1.el10.x86_64.rpm
+    Note: -p is used to query the package file and not a database. Also .rpm extension at the file end.
+
+Task:
+
+a. Install any package
+    dnf install -y dnsmasq
+
+b. Get the complete path of the installed command
+    which dnsmasq
+    output: /usr/sbin/dnsmasq
+
+c. Use a rpm query to get the package name which holds that command/tool
+    rpm -qf $(which dnsmasq)
+        where full command will be resolved as:
+            rpm -qf /usr/sbin/dnsmasq --> where as we remmember the -qf is a query format
+d. Show more info now about the package
+    rpm -qi dnsmasq
+
+e. List all files in the package
+    rpm -ql dnsmasq
+
+f. Show the files of the available documentation in the package
+    rpm -qd dnsmasq
+
+g. Before installation it is always good to know which scripts are going to be executed during installation
+    rpm -q --scripts dnsmasq

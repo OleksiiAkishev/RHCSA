@@ -1,4 +1,3 @@
-
 # CHAPTER 8 Networking
 
 Task 1. Configure the network interface with the following settings:

@@ -1,5 +1,5 @@
 
-## Chapter 1. Essential Tools
+## Chapter 2. Essential Tools
 1) Searching the right man pages:
     man -k <key_word>
 2) Update manpages:
@@ -46,7 +46,7 @@ c. Traditional way. Redirect stdout then redirect errors(stderr) to the same as 
     ls -al wergihl * > /tmp/lsoutput 2>&1
 d. cat /tmp/lsoutput
 
-## Chapter 2. File Management tools
+## Chapter 3. File Management tools
 
 Task 1. Log in as user student and use sudo -i to open a root shell. In the home directory of root, create one archive file that contains the contents of the /home directory and the /etc directory. Use the name /root/essentials.tar for the archive file.
 
@@ -115,7 +115,7 @@ a. Compress the originla archive in /root
 b. Verify the size of the archive after compressing
     ls -lh /root/essentials.tar.gz
 
-## Chapter 3. Text files
+## Chapter 4. Text files
 
 Task 1. Describe two ways to show line 5 from the /etc/passwd file.
 
@@ -188,7 +188,7 @@ sed: The stream editor utility.
 a. Delete line 6
    sed -i '6d' test.txt 
 
-Chapter 7. Networking
+# Chapter 8. Networking
 
 Task 1. If you didn’t do so earlier, set up the first server to use the FQDN server1.example.com. Set up the second server to use server2.example.com. 
 

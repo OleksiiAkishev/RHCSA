@@ -304,3 +304,70 @@ f. Check if the application was installed
 g. Check from other non-root users if repo and app do not exist for them
     flatpak list 
     flatpak remotes
+
+
+# Chapter 10 Managing processes
+
+Processes types:
+
+- shell jobs: started from command line; associated with the shell where were started; also reffered as interactice processes.
+- daemons: jobs that provide services; noramlly started at the boot of machine, and often(not all cases) run in root.
+- kernel threads: part of Linux kernel; cannot manage them with the common tools, for the monitoring and performance it is useful to keep trak on them. 
+
+Process: multiple threads (subdivision of the process). 
+
+### 
+
+Normally when the command is entered in the terminal and the shell job is started. That job runs as a foreground process by occupying the terminal, the command can be run in the background process by making the terminal available. 
+
+Job management overview:
+
+- **&**   starts the command immediately in the background. Ex: ping -c 3 8.8.8.8 **&**
+- **fg** brings the last job to the foreground which was moved to the background
+- **jobs** shows the current jobs
+- **Crtl-Z** stops the job temporary; so that job can be managed now, e.g., moved to the background.
+- **bg** continues the job which has been frozen with **Ctrl-Z** in the background process.
+- **Ctrl-C** cancells the current interactive job
+- **Ctrl-D** sends the EOF character to the current job to indicate that it should stop waiting for further input.
+- **top** shows the live top running jobs
+
+### Exercise 10-1 Managing jobs
+
+1. Open a root shell and type a next commands:
+    sleep 3600 & 
+    dd if=/dev/zero of=/dev/null & 
+    sleep 7200
+
+    Now: because the sleep 7200 was run without **&** need to wait 2 hours before terminal will be available. 
+
+1.1 Type **Ctrz-Z** to stop the command.
+
+2. See the jobs which were started:
+    **jobs**
+
+3. Put the stopped job for the background process
+    bg <job_n>
+    bg 4
+
+4. Check jobs again
+    jobs
+
+5. Move the first job to the fg
+    fg 2
+
+5.1 Cancel job (stop it)
+    **Ctrl-Z**
+
+5.2 Check jobs that it is gone
+    jobs
+6. Cancel all other jobs in the same way
+7. Open a second terminal and type:
+    dd if=/dev/zero of=/dev/null &
+8. Close a second terminal
+    exit
+9. Back to the previous terminal and type
+    top
+9.1 See that the dd job is still running
+9.2 Kill the process, type **k** in the top foreground process
+9.3 PID promted to be typed, hence put that PID manually and kill the process
+

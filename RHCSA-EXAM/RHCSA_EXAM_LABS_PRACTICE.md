@@ -197,3 +197,6 @@ Task 2. On server1.example.com, use nmtui and configure your primary network car
 Task 3. Make sure that from server1 you can ping server2, and vice versa. 
 
 Task4. To allow you to access servers on the Internet, make sure that your local DHCP server provides the default router and DNS servers.
+
+# Chapter 9. Working with Software
+List the repositories currently in use on your server. Search for the package that contains the cache-only DNS name server. Do not install it yet. Perform an extensive query of the package so that you know before you install it which files it contains, which dependencies it has, and where to find the documentation and configuration. Check whether the RPM package contains any scripts. You may download it, but you may not install it yet; you want to know which scripts are in a package before actually installing it, right? Install the package you found in step 3. Undo the installation. Log in as user student and install the Firefox application in such a way that it is available for that user only.

@@ -277,3 +277,30 @@ f. Show the files of the available documentation in the package
 
 g. Before installation it is always good to know which scripts are going to be executed during installation
     rpm -q --scripts dnsmasq
+
+
+### Flatpak
+
+Was used mainly with the GUI. Flatpak can help with the concern when the same package with the different versions need to be installed on the same machine for different purposes. Normally it is not possible to do in the standard way. Flatpak uses a like container approach - all dependencies are in the image. Flatpak can be a user custom tool, which does not need the admin previledges to work with the packages as dnf or rpm do. 
+
+
+a. Install Flatpak
+    dnf install flatpak
+
+
+### Exercise 9-4 Working with Flatpak Applications
+
+a. Login as non-root
+b. Add a reference to the remote repo:
+    flatpak remote-add --user myrepo https://dl.flathub.org/repo/flathub.flatpakrepo
+c. Verify all the repos
+    flatpak remotes
+d. Use a flatpak to search for the program
+    flatpak search gimp
+e. Install with Flatpak
+    flatpak install -u gimp.
+f. Check if the application was installed
+    flatpak list
+g. Check from other non-root users if repo and app do not exist for them
+    flatpak list 
+    flatpak remotes

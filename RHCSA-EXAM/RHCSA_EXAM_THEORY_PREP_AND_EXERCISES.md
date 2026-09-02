@@ -316,7 +316,7 @@ Processes types:
 
 Process: multiple threads (subdivision of the process). 
 
-### 
+##
 
 Normally when the command is entered in the terminal and the shell job is started. That job runs as a foreground process by occupying the terminal, the command can be run in the background process by making the terminal available. 
 
@@ -330,6 +330,10 @@ Job management overview:
 - **Ctrl-C** cancells the current interactive job
 - **Ctrl-D** sends the EOF character to the current job to indicate that it should stop waiting for further input.
 - **top** shows the live top running jobs
+- **ps** overview of the current running processes
+- **ps aux** summary of the processes with additional information; normally exposes more processes: including kernel, daemons.
+    Note: instead of ps aux | grep dd we can use also pgrep dd --> outputs only PIDs
+- **ps fax** shows the parent-child relationships between processes
 
 ### Exercise 10-1 Managing jobs
 
@@ -371,3 +375,262 @@ Job management overview:
 9.2 Kill the process, type **k** in the top foreground process
 9.3 PID promted to be typed, hence put that PID manually and kill the process
 
+## Parent-Child relations
+When a process is started from a shell it becomes a child process of that shell. 
+- Process are killed if the terminal is closed from where they were started
+- Process are NOT killed if they were ran in the background and terminal is closed
+
+As Linux admins we cannot manage individual threads but we can manage processes.
+2 Types of the background processes:
+    - kernel threads; they are part of the Linux kernel processes. Each has PID (process identification number); we can easily indetify them, e.g:
+            root           1  0.2  0.9  44580 36200 ?        Ss   09:59   0:30 /usr/lib/systemd/systemd --switched-root --system --deserialize=43 rhgb
+            root           2  0.0  0.0      0     0 ?        S    09:59   0:00 [kthreadd]
+            root           3  0.0  0.0      0     0 ?        S    09:59   0:00 [pool_workqueue_release]
+            root           4  0.0  0.0      0     0 ?        I<   09:59   0:00 [kworker/R-rcu_gp]
+        Kernel process have the name between the square brackets. 
+        Note: as admins we cannot manage the kernel threads only by complete downtime of machine. 
+    - daemon processes
+
+## Processes priorities
+cgroups are used in Linux to allocate resources. There are 3 areas, which are called **slices**.
+    - system: where all Systemd-managed processes are running
+    - user: where all user processes, including root processes are running
+    - machine: optional slice for VMs and containers
+All slices have the same CPU weight. Means the CPU capacity is equally devided for them. 
+
+Normally all the processes are starting with the same priority. Changing a process priority can be done with the **nice** (start a new process with specified priority) and **renice** (modify the priority for the current active process). Alternatively use the **r** from the **top** command.  
+
+Note: in RHEL 10 if you kill the parent process all the child processes become as childs of the Systemd process - before RHEL all childs were killed once the parent one is. 
+
+## Signals
+Signal is an anstruction can be sent to a process. Common signals: SIGTERM and SIGKILL; 
+**kill** the way to send the signal to the process
+**kill -l** check all available signals can be sent
+Output example:
+1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
+ 6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1
+11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
+
+Hence, to send a signal use e.g. **kill -3**
+
+### Exercise 10-1 Managing processes from the command line
+1. In the root shell type the same command 3 times:
+    dd if=/dev/zero of=/dev/null &
+
+2. Verify those processes
+    ps aux | grep dd
+output:
+PID   USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+  COMMAND
+15928 oleksii+  20   0  226864   1940   1820 R  47.6   0.1   0:44.02  dd                                
+15926 oleksii+  20   0  226864   1984   1860 R  44.1   0.1   0:49.70  dd                                                                                         
+15930 oleksii+  20   0  226864   1884   1764 R  40.6   0.1   0:43.65  dd 
+
+e.g. we can see the PR which is 20. 
+
+3. Try to change one of the process priority with the renice
+    renice -n 5 15926
+Now we see:
+15926 oleksii+  25   5  226864   1984   1860 R  19.3   0.1   2:41.68 dd
+
+The niceness was updated to 5 and priority to 25. 
+
+3.1 Try for opposite value
+    renice -n -10 15926
+
+output: 15926 oleksii+  10 -10  226864   1984   1860 R  78.3   0.1   3:17.87 dd
+The niceness is -10 and PR is 10. 
+
+4. Check the parent-child relations
+    ps fax | grep -B5 dd
+        where the -B5 shows the matching lines inluding the 5 lines before that. 
+output:
+  14558 ?        Ssl    1:17  \_ /usr/bin/ptyxis --gapplication-service
+  14565 ?        Ssl    0:04      \_ /usr/libexec/ptyxis-agent --socket-fd=3 --rlimit-nofile=1024
+  14597 pts/0    Ss     0:00          \_ /usr/bin/bash
+  14708 pts/0    T      0:00              \_ sudo sleep 3600
+  14719 pts/0    T      0:00              \_ sudo sleep 3600
+  15926 pts/0    R<     4:26              \_ dd if=/dev/zero of=/dev/null
+  15928 pts/0    R      4:26              \_ dd if=/dev/zero of=/dev/null
+  15930 pts/0    R      4:23              \_ dd if=/dev/zero of=/dev/null
+
+5. Kill the dd processes
+    kill -9 15926
+
+6. Kill all
+    killall dd
+    Note: the process name, do not kill all at all. 
+
+## Killing Zombies
+Zombies are processes with a special state. Zombie processes are processes that have completed execution but are still listed in the process table.
+
+- **ps aux | grep defunct**
+
+Killing them with the reboot (which normally helps) can be expensive in terms of server distrupting. 
+**kill -SIGCHLD <parentpid>** to properly kill a zombie
+
+How to find the Parent Id of the Child Id? 
+
+can use:
+ps -eo pid,ppid,state,cmd | grep defunct
+    where -e is like ALL
+          -o is Format output where we can pass some columns
+output:
+  11308    1149 Z [pkla-check-auth] <defunct>
+  16331   14597 S grep --color=auto defunct
+
+And now:
+kill -SIGCHLD 1149
+    where the 1149 is a Parent id from the column of ppid
+
+
+## Linux process states
+- Running (R)
+- Sleeping (S)
+- Uninterruptible sleep (D): in sleep but cannot be stopped
+- Stopped (T)
+- Zombie (Z)
+
+**uptime** - information about average load
+As a rule of thumb, the load average should not be higher than the number of CPU cores in your system.
+**lscpu** - check the CPU cores
+
+### Exercise 10-3 Managing load average
+
+1. In root, run 3 times:
+    dd if=/dev/zero of=/dev/null &
+
+2. Observe current load average
+    top
+
+3. Check with uptime
+
+Before: 18:19:54 up  5:11,  1 user,  load average: 0.34, 0.31, 0.65
+After: 18:20:45 up  5:12,  1 user,  load average: 2.00, 0.75, 0.79
+
+4. Check CPU and core numbers
+    lscpu
+output:
+Byte Order:                              Little Endian
+CPU(s):                                  2
+On-line CPU(s) list:                     0,1
+...
+CPU family:                              6
+Model:                                   158
+Thread(s) per core:                      1
+Core(s) per socket:                      1
+
+5. Kill all dd
+    killall dd
+
+
+In Linux a user can tune a sytem to optimize performance. It can be done with the **tuned** command. In the profiles (file for performance settings) admins can easily tune the system.
+**Profile Overview**
+balanced                The best compromise between power usage and performance
+desktop                 Based on the balanced profile, but tuned for better response to interactive applications
+latency-performance     Tuned for maximum throughput
+network-latency         Based on latency-performance, but with additional options to reduce network latency
+network-throughput      Based on throughput-performance, optimizes older CPUs for streaming content
+powersave               Tunes for maximum power saving. Use this if you’re using a RHEL virtual machine on your laptop and you want your battery to last longer
+throughput-performance  Tunes for maximum throughput
+virtual-guest           Optimizes Linux for running as a virtual machine
+virtual-host            Optimizes Linux for use as a KVM host
+
+### Exercise 10-3 Managing load average
+
+1. Install tuned with dnf if not the case
+    dnf install tuned
+
+2. Check if running
+    systemctl status tuned
+
+2.1 If not
+    systemctl enable --now tuned
+
+3. To see which profile is used
+    tuned-adm active
+
+4. To see which profile is recommended
+    tuned-adm recommend
+
+5. Activate throughput-performance profile
+    tuned-adm profile throughput-performance
+
+# Chapter 11 Working with the Systemd
+
+**Systemd** The service manager on RHEL 10, Systemd is the very first process that starts after the kernel has loaded, and it takes care of starting all other processes and services on a Linux system. Unit an item that is managed by Systemd. Different types of units exist, including service, path, mount, and target units.
+
+- display available list of available units:
+    systemctl -t help
+
+- /usr/lib/systemd/system: default unit files. Installed from RPM manager
+- /etc/systemd/system: custom unit files generated by admin or added with **systemctl edit**
+- /run/systemd/system: unit files that have been generated automatically
+where the priority: from the last to first. Means /run takes precendence over /etc/ and /etc/ oever /usr
+
+Users can create their units under ~/.config/systemd.
+If check any of the unit files under /usr.. path we can find the clear pattern structure
+
+[Unit]
+Description=Podman API Service
+Requires=podman.socket
+After=podman.socket
+Documentation=man:podman-system-service(1)
+StartLimitIntervalSec=0
+
+[Service]
+Delegate=true
+Type=exec
+KillMode=process
+Environment=LOGGING="--log-level=info"
+ExecStart=/usr/bin/podman $LOGGING system service
+
+[Install]
+WantedBy=default.target
+
+where 
+    [Unit] defines dependencies and describes the unit
+    [Service] describes how to start and stop the service and request status installation.
+    [Install] indicates in which target this unit has to be started
+
+### Systemd mount units
+
+It is alreanative way of /etc/fstab; how to mount a file system on a specific directory.
+To check the unit files, specifically for the mount now, we can use:
+    cat /usr/lib/systemd/system/tmp.mount
+    OR directly with the command systemctl
+    systemctl cat tmp.mount
+    THe output will be the same
+
+### Systemd socket units
+A socket creates a method for an application to communicate with another one. It can be defined as a file but also as a port on which the Systemd will be listening on incoming conenctions. Thus the service does not need to stay in idle mode (running all the time) it wait to run until a connection is established.
+
+Check if unit service is running
+systemctl status cockpit.service
+
+### Systemd target units
+The unit files are used to build the functionality that is needed on your server.
+
+**want** An indication for a Systemd unit file that it is supposed to be started from a specific Systemd target.
+
+### Exercise 11-1 Managing units with systemctl
+
+1. From root install a Very Secure FTP service
+    dnf -y install vsftpd
+
+2. Active that service
+    systemctl start vsftpd
+
+3. Check the statuc
+    systemctl status vsftpd
+    See: loaded (/usr/lib/systemd/system/vsftpd.service; disabled;
+        Means the service won't be started after system restart
+
+4. Enable vsftpd service
+    systemctl enable vstfpd
+
+4.1 Check the status again
+
+### Managing dependecies
+Some unit types might have dependencies on the service units.
+- Check dependencies:
+    systemctl list-dependencies vsftpd

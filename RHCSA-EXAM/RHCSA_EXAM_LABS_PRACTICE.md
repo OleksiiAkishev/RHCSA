@@ -200,3 +200,11 @@ Task4. To allow you to access servers on the Internet, make sure that your local
 
 # Chapter 9. Working with Software
 List the repositories currently in use on your server. Search for the package that contains the cache-only DNS name server. Do not install it yet. Perform an extensive query of the package so that you know before you install it which files it contains, which dependencies it has, and where to find the documentation and configuration. Check whether the RPM package contains any scripts. You may download it, but you may not install it yet; you want to know which scripts are in a package before actually installing it, right? Install the package you found in step 3. Undo the installation. Log in as user student and install the Firefox application in such a way that it is available for that user only.
+
+
+# Chapter 10. Managing processes
+Launch the command dd if=/dev/zero of=/dev/null three times as a background job. Increase the priority of one of these commands using the nice value -5. Change the priority of the same process again, but this time use the value -15. Observe the difference. Kill all the dd processes you just started. Ensure that tuned is installed and active, and set the profile that works best for a virtual machine that runs on a laptop that is not connected to a power supply.
+
+# Chapter 11. Working with the systemd
+
+Install the vsftpd and httpd services. Set the default systemctl editor to vim. Edit the httpd.service unit file such that starting httpd will always auto-start vsftpd. Edit the httpd service such that after failure it will automatically start again in 10 seconds. Make sure both services are automatically started while booting.

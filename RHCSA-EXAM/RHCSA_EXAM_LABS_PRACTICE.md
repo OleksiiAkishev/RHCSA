@@ -1,210 +1,254 @@
 
-## Chapter 2. Essential Tools
-1) Searching the right man pages:
-    man -k <key_word>
-2) Update manpages:
-    mandb
-Task 1. Modify your shell environment so that on every subshell that is started, a variable is set. The name of the variable should be COLOR, and the value should be set to red. Verify that it is working.
+## Chapter 2 — Essential Tools
 
-Note:
- - Shell: main interactive command line interface
- - Subshell: a new child command line session created inside or by the main shell
- - .bashrc it is a file where environment configurations are stored and loaded on the startup
-Solution:
-a. check the if .bashrc exists in the home dir
-    less ~/.bashrc
-b. append to the end of the existing file, required command
-    echo "export COLOR=red" >> ~/.bashrc  
-Note: the export is important here, it give possibility to be available it in the child shells
-c. test in the current shell
-    echo $COLOR
-d. test in the subshell
-    bash -c 'echo $COLOR'
+### Quick references
+- Search man pages:
 
-Task 2. Use the appropriate tools to find the command that you can use to change a user password. Do you need root permissions to use this command?
+```bash
+man -k <keyword>
+```
 
-a. find command by keywords with man
-    man -k "change user password"
-b. identify the command
-    passwd # works for current unprivileged user (No roor needed)
-    passwd jack # fails for regular users --> requires root/sudo
-It means that the user on the current session can update personal password (if login is set to correct directory and not to non login), but cannot chage the password if not root for other users.
+- Update man database:
 
-Task 3. From your home directory, type the command ls -al wergihl * and ensure that errors as well as regular output are redirected to a file with the name /tmp/lsoutput.
+```bash
+mandb
+```
 
-Notes:
-    File descriptors:
-        - 1 = Standard Output (stdout)
-        - 2 = Standard Error (stderr)
-* standard output matches all the file from the used location
+### Task 1 — Set an environment variable for subshells
+Make the variable `COLOR=red` available in every subshell.
 
-a. Navigate to home dir
-    cd ~
-b. Modern way to ouput errors and standard output to the required file
-    ls -al wergihl * &> /tmp/lsoutput
-c. Traditional way. Redirect stdout then redirect errors(stderr) to the same as stdout
-    ls -al wergihl * > /tmp/lsoutput 2>&1
-d. cat /tmp/lsoutput
+```bash
+# ensure ~/.bashrc exists and append the export
+echo 'export COLOR=red' >> ~/.bashrc
 
-## Chapter 3. File Management tools
+# test in current shell
+echo $COLOR
 
-Task 1. Log in as user student and use sudo -i to open a root shell. In the home directory of root, create one archive file that contains the contents of the /home directory and the /etc directory. Use the name /root/essentials.tar for the archive file.
+# test in a subshell
+bash -c 'echo $COLOR'
+```
 
-Notes: 
-    - Always place the target archive path immediately after the -f flag (e.g., tar -cvf /path/to/archive.tar /source1 /source2). Reversing the order is a common exam mistake that corrupts the syntax!
+Notes: use `export` so the variable is inherited by child shells.
 
-    - tar Flag Reference:
-        c: Create a new archive.
-        f: Specifies the archive filename (this flag must immediately precede the filename)
-        v: Verbose mode (optional, shows files as they are added).
+### Task 2 — Find the command to change passwords
 
-a. elevate to root:
-    sudo -i
-b. create archive containing both directories
-    tar -cvf /root/essentials.tar /home /etc
-c. list in human readable to see the size of the archive
-    ls -lh /root
+```bash
+man -k "change user password"
+# the command is `passwd`
+passwd          # changes current user's password (no root required)
+sudo passwd jack   # changing another user's password requires root
+```
 
-Task 2. Copy this archive to the /tmp directory. Also create a hard link to this file in the /directory.
-Notes:
-    Copying (cp): Duplicates the file to a new location. Changes to one copy will not affect the other.
-    Hard Link (ln): Creates a direct pointer to the exact same physical data (inode) on disk.
-        It acts like an additional name for the exact same file.
-        Editing through /essentials.tar updates /tmp/essentials.tar instantly.
-        Deleting one name does not delete the underlying data until all hard links pointing to it are removed.
+### Task 3 — Redirect stdout and stderr to a file
+From your home directory, run `ls -al wergihl *` and capture both stdout and stderr into `/tmp/lsoutput`.
 
-a. copy archive to tmp
-    cp /root/essentials.tar /tmp
-b. Create a hard link in the / targeting the copy in /tmp
-    ln  /tmp/essentials.tar /essentials.tar 
-c. Verify the hard link (check that the count column - shows 2)
-    ls -l /tmp/essentials.tar /essentials.tar
-d. Check that both files share same inode number
-    ls -i /tmp/essentials.tar /essentials.tar
+```bash
+cd ~
+# modern bash/ksh-style
+ls -al wergihl * &> /tmp/lsoutput
 
-Task 3. Rename the file /essentials.tar to /archive.tar. Create a symbolic link in the home directory of the user root that refers to /archive.tar. Use the name link.tar for the symbolic link.
+# POSIX-compatible style
+ls -al wergihl * > /tmp/lsoutput 2>&1
 
-Note: 
-    - Renaming (mv): Moving a file to a new path in the same filesystem simply renames its link without moving the underlying data. Because /essentials.tar was a hard link to /tmp/essentials.tar, renaming it to /archive.tar keeps that hard link completely intact.
-    - Symbolic Link (ln -s): Creates a "shortcut" or pointer to a target file path (like a Windows shortcut).
-        Unlike a hard link, it points to the filename/path, not the underlying disk data (inode).
-        If the target path is moved or deleted, the symlink breaks (turns red/blinking in terminal).
-
-a. Rename /essentials.tar to /archive.tar
-    mv /essentials.tar /archive.tar
-b. Create the symbolic link in /root pointing to /archive.tar
-    ln -s /archive.tar /root/link.tar
-c. Verify the symbolic link
-    ls -l /root/link.tar
-
-Task 4. Remove the file /archive.tar and see what happens to the symbolic link. Remove the symbolic link also.
-
-Note: Broken Symlink (Dangling Link): Since a symbolic link points to a path name (/archive.tar) rather than the underlying disk inode, deleting the target file breaks the link. The symlink file itself still exists on disk, but pointing to nothing.
-
-a. Remove the target file
-    rm-f /archive.tar
-b. Check the symbolic link state
-    ls -l /root/link.tar
-c. Clean up the broken symbolic link
-    rm -f /root/link.tar
-
-Task 5. Compress the /root/essentials.tar file.
-
-a. Compress the originla archive in /root
-    gzip /root/essentials.tar
-b. Verify the size of the archive after compressing
-    ls -lh /root/essentials.tar.gz
-
-## Chapter 4. Text files
-
-Task 1. Describe two ways to show line 5 from the /etc/passwd file.
-
-a. Method 1: using head and tail
-    head -n 5 /etc/passwd | tail -n 1
-    Note: in this way tail takes the last line only from the chunk of 5 of head.
-b. Method 2: using sed (Stream Editor)
-    sed -n '5p' /etc/passwd
-    Note: the -n tells to sed suppress the output but to show only line 5
-c. Method 3: using awk
-    awk 'NR==5' /etc/passwd
-    Note: NR (number of records(lines)) - to print the line when the number is exactly 5.
-
-Task 2. How would you locate all text files on your server that contain the current IP address? Do you need a regular expression to do this?
-
-a. To show the files where match case is occured, use a grep:
-    grep -rl "198.168.1.10"
-        Where:    
-            -r (recursive): Searches through all directories and subdirectories. (I used /etc/ here as a practical example. You could use / for the whole server, but it will take a very long time and throw permission errors).
-            -l (files-with-matches): Tells grep to only print the names of the files containing the IP, rather than printing the actual matching lines.
-
-    Can use without -l as well, to see the lines of matched.
-
-Task 3. You have just used the sed command that replaces all occurrences of the text Administrator with root. Your Windows administrators do not like that very much. How do you revert?
-
-Prerequisites:
-a. Create a sample test file cotaining the word "Administrator"
-    echo "The Server Administrator needs Administrator access." > ~/sed_test.txt
-    # inspect a file
-    cat ~/sed_test.txt
-b. Run a sed to replace "Administrator" with a "root" (with an automatic safety backup)
-    sed -i.bak 's/Administrator/root/g' ~/sed_test.txt
-    # inspect the modified file
-    cat ~/sed_test.txt
-    # inspect the safety backup file created by -i.bak
-    cat ~/sed_test.txt.bak
-
-Revert changes:
-a. Option A. Swap terms with sed
-    sed -i 's/root/Administrator/g' ~/sed_test.txt
-b. Option B. Restore from backup file
-    mv ~/sed_test.txt.bak ~/sed_test.txt 
-
-Task 4. Assuming that in the ps aux command the fifth line contains information about memory utilization, how would you process the output of that command to show the process that has the heaviest memory utilization first in the results list?
-
-Flags on command:
-sort: Sorts lines of text.
--k5 (Key): Sorts specifically using column 5.
--r (Reverse): Sorts in descending order (highest value at the top, instead of lowest).
--n (Numeric): Tells sort to evaluate numbers numerically (10 comes after 2), rather than alphabetically (10 coming before 2).
-head: Keeps your terminal clean by printing only the top 10 results.
-
-a. Sorting by memory utilization
-    ps aux | sort -k5 -rn | head
-
-Task 5. Which command enables you to filter the sixth column of ps aux output?
-
-a. Print ONLY the 6th column (RSS memory usage in KB)
-    ps aux | awk '{print $6}'
-b. Filtering by Column Value with awk
-    ps aux | awk '$6 > 10000'
-
-Task 6. How do you delete the sixth line from the file ~/myfile?
-
-Notes:
-sed: The stream editor utility.
--i: Modifies the file in-place (saves the change directly into ~/myfile).
-6d: Instructs sed to target line 6 and delete (d) it.
-
-a. Delete line 6
-   sed -i '6d' test.txt 
-
-# Chapter 8. Networking
-
-Task 1. If you didn’t do so earlier, set up the first server to use the FQDN server1.example.com. Set up the second server to use server2.example.com. 
-
-Task 2. On server1.example.com, use nmtui and configure your primary network card to automatically get an IP address through DHCP. Also set a fixed IP address to 192.168.4.210. On server2, set the fixed IP address to 192.168.4.220. 
-
-Task 3. Make sure that from server1 you can ping server2, and vice versa. 
-
-Task4. To allow you to access servers on the Internet, make sure that your local DHCP server provides the default router and DNS servers.
-
-# Chapter 9. Working with Software
-List the repositories currently in use on your server. Search for the package that contains the cache-only DNS name server. Do not install it yet. Perform an extensive query of the package so that you know before you install it which files it contains, which dependencies it has, and where to find the documentation and configuration. Check whether the RPM package contains any scripts. You may download it, but you may not install it yet; you want to know which scripts are in a package before actually installing it, right? Install the package you found in step 3. Undo the installation. Log in as user student and install the Firefox application in such a way that it is available for that user only.
+cat /tmp/lsoutput
+```
 
 
-# Chapter 10. Managing processes
-Launch the command dd if=/dev/zero of=/dev/null three times as a background job. Increase the priority of one of these commands using the nice value -5. Change the priority of the same process again, but this time use the value -15. Observe the difference. Kill all the dd processes you just started. Ensure that tuned is installed and active, and set the profile that works best for a virtual machine that runs on a laptop that is not connected to a power supply.
+## Chapter 3 — File management
 
-# Chapter 11. Working with the systemd
+### Task 1 — Create an archive containing `/home` and `/etc`
 
-Install the vsftpd and httpd services. Set the default systemctl editor to vim. Edit the httpd.service unit file such that starting httpd will always auto-start vsftpd. Edit the httpd service such that after failure it will automatically start again in 10 seconds. Make sure both services are automatically started while booting.
+```bash
+sudo -i
+tar -cvf /root/essentials.tar /home /etc
+ls -lh /root/essentials.tar
+```
+
+Notes: `-f` must immediately precede the archive filename.
+
+### Task 2 — Copy and create a hard link
+
+```bash
+cp /root/essentials.tar /tmp
+ln /tmp/essentials.tar /essentials.tar
+ls -l /tmp/essentials.tar /essentials.tar
+ls -i /tmp/essentials.tar /essentials.tar
+```
+
+### Task 3 — Rename and create a symbolic link
+
+```bash
+mv /essentials.tar /archive.tar
+ln -s /archive.tar /root/link.tar
+ls -l /root/link.tar
+```
+
+### Task 4 — Remove target and examine the symlink
+
+```bash
+rm -f /archive.tar
+ls -l /root/link.tar   # shows a dangling symlink
+rm -f /root/link.tar
+```
+
+### Task 5 — Compress the archive
+
+```bash
+gzip /root/essentials.tar
+ls -lh /root/essentials.tar.gz
+```
+
+
+## Chapter 4 — Text files
+
+### Task 1 — Show line 5 of `/etc/passwd`
+
+```bash
+head -n 5 /etc/passwd | tail -n 1
+sed -n '5p' /etc/passwd
+awk 'NR==5' /etc/passwd
+```
+
+### Task 2 — Find files containing a specific IP
+
+```bash
+grep -rl "198.168.1.10" /etc
+```
+
+### Task 3 — Revert a `sed -i` replacement
+
+```bash
+echo "The Server Administrator needs Administrator access." > ~/sed_test.txt
+sed -i.bak 's/Administrator/root/g' ~/sed_test.txt
+
+# revert by swapping or restoring backup
+sed -i 's/root/Administrator/g' ~/sed_test.txt
+# or
+mv ~/sed_test.txt.bak ~/sed_test.txt
+```
+
+### Task 4 — Sort processes by memory (heaviest first)
+
+```bash
+ps aux | sort -k5 -rn | head
+```
+
+### Task 5 — Print/filter the 6th column from `ps aux`
+
+```bash
+ps aux | awk '{print $6}'
+ps aux | awk '$6 > 10000'
+```
+
+### Task 6 — Delete line 6 from a file
+
+```bash
+sed -i '6d' ~/myfile
+```
+
+
+## Chapter 8 — Networking (lab tasks)
+
+### Task 1 — Set FQDNs
+- server1.example.com
+- server2.example.com
+
+### Task 2 — Configure DHCP and fixed addresses
+- server1: primary interface DHCP, add secondary fixed address `192.168.4.210`
+- server2: set fixed address `192.168.4.220`
+
+### Task 3 — Verify connectivity
+
+```bash
+ping -c 3 server2.example.com   # from server1
+ping -c 3 server1.example.com   # from server2
+```
+
+### Task 4 — Ensure DHCP provides default router and DNS
+Verify DHCP scope contains gateway and DNS entries (DHCP server configuration).
+
+
+## Chapter 9 — Working with software
+
+1. List repositories in use:
+
+```bash
+dnf repolist
+```
+
+2. Search for the package (example: cache-only DNS name server) and inspect without installing:
+
+```bash
+dnf search <package_keyword>
+dnf info <package_name>
+dnf repoquery --list <package_name>    # shows files in package
+rpm -qpi <package.rpm>                 # package metadata (if downloaded)
+rpm -q --scripts <package.rpm>         # shows scripts in an RPM file
+```
+
+3. Install and then undo installation:
+
+```bash
+sudo dnf install -y <package_name>
+sudo dnf remove -y <package_name>
+```
+
+4. Install Firefox for a single user (example using Flatpak or local install for that user):
+
+```bash
+# Flatpak per-user install (if Flatpak configured)
+flatpak install --user flathub org.mozilla.Firefox
+```
+
+
+## Chapter 10 — Managing processes
+
+1. Launch `dd` three times in background:
+
+```bash
+dd if=/dev/zero of=/dev/null &
+dd if=/dev/zero of=/dev/null &
+dd if=/dev/zero of=/dev/null &
+```
+
+2. Change priority of a process (example using PID):
+
+```bash
+renice -n -5 -p <pid>
+renice -n -15 -p <pid>
+```
+
+3. Kill the `dd` processes:
+
+```bash
+pkill dd
+```
+
+4. Ensure `tuned` is installed and set an appropriate profile:
+
+```bash
+sudo dnf install -y tuned
+sudo systemctl enable --now tuned
+sudo tuned-adm profile virtual-guest
+```
+
+
+## Chapter 11 — Working with systemd
+
+1. Install services and configure unit behavior:
+
+```bash
+sudo dnf install -y vsftpd httpd
+
+# set default editor for systemctl (affects 'systemctl edit')
+export SYSTEMD_EDITOR=vim
+
+# Make httpd start vsftpd: create a drop-in
+sudo systemctl edit --full httpd.service
+# Add `Wants=vsftpd.service` under [Unit] and `Restart=on-failure` with `RestartSec=10` under [Service]
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now vsftpd httpd
+```
+
+Adjust the unit file carefully (use `systemctl edit` to create a drop-in or edit the unit safely).

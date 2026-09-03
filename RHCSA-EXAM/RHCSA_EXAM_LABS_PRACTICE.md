@@ -239,16 +239,23 @@ sudo tuned-adm profile virtual-guest
 
 ```bash
 sudo dnf install -y vsftpd httpd
+```
 
-# set default editor for systemctl (affects 'systemctl edit')
+2. Set default editor for systemctl (affects 'systemctl edit'):
+```bash
 export SYSTEMD_EDITOR=vim
+```
 
-# Make httpd start vsftpd: create a drop-in
+3. Edit the httpd.service unit file such that starting httpd will always auto-start vsftpd. Edit the httpd service such that after failure it will automatically start again in 10 seconds.
+```bash
 sudo systemctl edit --full httpd.service
+```
+# Make httpd start vsftpd: create a drop-in
 # Add `Wants=vsftpd.service` under [Unit] and `Restart=on-failure` with `RestartSec=10` under [Service]
 
+4. Make sure both services are automatically started while booting. -->to be confirmed this part
+
+```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now vsftpd httpd
 ```
-
-Adjust the unit file carefully (use `systemctl edit` to create a drop-in or edit the unit safely).

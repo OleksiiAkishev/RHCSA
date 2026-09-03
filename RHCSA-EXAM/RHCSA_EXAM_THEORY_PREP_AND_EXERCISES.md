@@ -615,7 +615,7 @@ The unit files are used to build the functionality that is needed on your server
 ### Exercise 11-1 Managing units with systemctl
 
 1. From root install a Very Secure FTP service
-    dnf -y install vsftpd
+    dnf install vsftpd
 
 2. Active that service
     systemctl start vsftpd
@@ -634,3 +634,38 @@ The unit files are used to build the functionality that is needed on your server
 Some unit types might have dependencies on the service units.
 - Check dependencies:
     systemctl list-dependencies vsftpd
+
+### Exercise 11-2 Changing unit configuration
+
+1. From root install Apache web server package
+    dnf install httpd
+
+2. Show the current service unit
+    systemctl cat httpd.service
+
+3. Check for the available directives
+    systemctl show httpd.service
+
+4. Change the default configurations
+    systemctl edit httpd.service
+    add a [Service] section that includes the Restart=always and RestartSec=5s lines.
+
+5. Reload the configs
+    sudo systemctl daemon-reload
+
+6. Start the service and verify if running
+    systemctl start httpd
+    systemctl status httpd
+
+7. Kill all 
+    killall httpd
+
+8. Check after 5 sec again the status to see that it is again running
+    systemctl status httpd
+
+
+**Notes**:
+edit the /root/.bash_profile
+    export SYSTEMD_EDITOR="/usr/bin/vim"
+and add this line to the ~/.bashrc file.
+    After login the vim will be used as a default editor

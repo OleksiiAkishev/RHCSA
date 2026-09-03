@@ -1,102 +1,137 @@
-# CHAPTER 8 Networking
+# CHAPTER 8 — Networking
 
-Task 1. Configure the network interface with the following settings:
-IPv4 Address: 192.168.122.10
-Subnet Mask: 255.255.255.0
-Default Gateway: 192.168.122.1 
-DNS Server: 192.168.100.1
-Interface Name: eth0
-Hostname: rhcsa-node
+## Task 1 — Configure a network interface
+Configure the interface with these settings:
+- IPv4 address: `192.168.122.10/24`
+- Subnet mask: `255.255.255.0` (same as `/24`)
+- Default gateway: `192.168.122.1`
+- DNS server: `192.168.100.1`
+- Interface name: `eth0` (profile may vary)
+- Hostname: `rhcsa-node`
 
-Note: it is prefferably to do with the nmtui, and to not spend much time on this and just move on, but it is good to know of what you are doing, thus the nmcli is good to understand as well. 
+Note: `nmtui` is quickest for the exam; `nmcli` is useful to understand and script.
 
-Useful commands:
+### Useful commands
+- Show connection profiles:
 
-a. Check the actual profile configs:
-    nmcli conenction show
-b. Actual addresses present on the interface
-    ip addr
-c. Actual routing table
-    ip route
-d. CHeck the configs of the current profile config by name
-    nmcli connection show "<name_of_profile_config>"
-e. Update connection to proper device:
-    nmcli connection modify static connection.interface-name ens160
-f. Alway try to up after modification:
-    nmcli connection up "<name_connection>"
+```bash
+nmcli connection show
+```
 
-Solution 1. with nmcli
+- Show addresses on interfaces:
 
-a. Configure with nmcli
-    nmcli connection modify "ethe" \
-    ipv4.method manual \
-    ipv4.addresses 192.168.122.10/24 \
-    ipv4.gateway 192.168.122.1 \
-    ipv4.dns 192.168.100.1
+```bash
+ip addr
+```
 
-a.1 Check and change the hostname
-    nmcli general hostname
-    nmcli general hostname <new_name>
+- Show routing table:
 
-b. Connection up
-    nmcli connection up "ethe"
+```bash
+ip route
+```
 
-c. Verify
-    ip addr show
+- Show details for a profile (replace name):
 
-d. Router verify
-    ip route
+```bash
+nmcli connection show "<profile_name>"
+```
 
-Solution 2. With nmtui
+- Update connection's device name:
 
-1. Open with sudo a nmtui UI tool for network connection
-    sudo nmtui
-2. Press on the Edit conenction (normally first btn)
-3. Find the required Interface name to be edited:
-    NOte: the profile name may include usually the interface name, thus you will see:
-        Profile name: System eth0
-        DEvice: eth0 (MAC here)
-4. Find field IPv4 CONFIGURATION and set it as Manual currently it is auto now.
-5. Then new fields are poped up: 
-    Addresses: add here the Ipv4 Address + IMPORTANT ! the mask, hence , based on the data given:
-        
-        IPv4 Address: 192.168.122.10
-        Subnet Mask: 255.255.255.0
+```bash
+nmcli connection modify <profile_name> connection.interface-name ens160
+```
 
-    You need to put in the Addresses as: 192.168.122.10/24 and press enter
+- Reactivate a connection after changes:
 
-6. Add Gateway to the Gateway
-7. Add DNS servers to the DNS servers
-8. Important be sure htat the device name is the one which is really exist, otherwise you won't be able to activate it.
-9. Go down for OK btn and press it
-10. Come to the root menu of the TUI
-11. Select Activate connection
-12. Deactivate the old connection or directly Activate that one which is requested. Means deactive at first and then activate it again.
-13. Select the Set system hostname and enter the requested hostname
+```bash
+nmcli connection up "<profile_name>"
+```
 
-Note: on the exam it can be a misconfusion that you won't be told which exact interface need to edit. --> thus you need to edit the one and only one which is exist now. Before to go with the nmtui check the interfaces with:
-ip a and ip r
+## Solution A — Using `nmcli`
 
-Note:
-NETWORK NOT WORKING?
+1. Modify the connection (replace `<profile>` with the actual profile name):
 
-1. Interface?
-   ip link
+```bash
+nmcli connection modify "<profile>" \
+  ipv4.method manual \
+  ipv4.addresses 192.168.122.10/24 \
+  ipv4.gateway 192.168.122.1 \
+  ipv4.dns 192.168.100.1
+```
 
-2. IP address?
-   ip addr
+2. Set the hostname:
 
-3. Route?
-   ip route
+```bash
+nmcli general hostname rhcsa-node
+```
 
-4. Can I reach gateway?
-   ping <gateway>
+3. Bring the connection up:
 
-5. Can I reach external IP?
-   ping 8.8.8.8
+```bash
+nmcli connection up "<profile>"
+```
 
-6. Can I resolve names?
-   DNS / resolvectl
+4. Verify:
 
-# Chapter 9 Managing Softwares
+```bash
+ip addr show
+ip route
+```
+
+## Solution B — Using `nmtui` (interactive)
+
+1. Start the TUI:
+
+```bash
+sudo nmtui
+```
+
+2. Choose *Edit a connection*, select the profile for the interface you want to change (profile names commonly include the interface name).
+3. Change *IPv4 Configuration* to *Manual* and set the `Addresses` field to `192.168.122.10/24`.
+4. Fill in *Gateway* (`192.168.122.1`) and *DNS servers* (`192.168.100.1`).
+5. Save, then choose *Activate a connection* and activate the updated profile.
+6. Set the system hostname from the TUI (`Set system hostname`) or with `nmcli` as above.
+
+Tip: run `ip a` and `ip r` before starting `nmtui` to identify the active interface.
+
+## Troubleshooting checklist
+- Is the interface present?
+
+```bash
+ip link
+```
+
+- Does the interface have the expected IP?
+
+```bash
+ip addr
+```
+
+- Is there a route to the gateway?
+
+```bash
+ip route
+```
+
+- Can you reach the gateway?
+
+```bash
+ping -c 3 192.168.122.1
+```
+
+- Can you reach an external IP?
+
+```bash
+ping -c 3 8.8.8.8
+```
+
+- Can you resolve DNS names?
+
+```bash
+resolvectl query google.com
+```
+
+
+# CHAPTER 9 — Managing Software
 

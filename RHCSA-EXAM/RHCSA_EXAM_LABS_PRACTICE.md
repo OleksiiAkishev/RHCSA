@@ -259,3 +259,7 @@ sudo systemctl edit --full httpd.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now vsftpd httpd
 ```
+
+
+## Chapter 12 — Scheduling Tasks
+Create a cron job that performs an update of all software on your computer every evening at 11 p.m. Schedule your machine to be rebooted at 3 a.m. tomorrow morning. Use a Systemd timer to start the vsftpd service five minutes after your system has started.

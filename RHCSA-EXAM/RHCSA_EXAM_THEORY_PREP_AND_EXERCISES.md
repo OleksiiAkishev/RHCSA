@@ -557,7 +557,28 @@ virtual-host            Optimizes Linux for use as a KVM host
 
 # Chapter 11 Working with the Systemd
 
-**Systemd** The service manager on RHEL 10, Systemd is the very first process that starts after the kernel has loaded, and it takes care of starting all other processes and services on a Linux system. Unit an item that is managed by Systemd. Different types of units exist, including service, path, mount, and target units.
+**Systemd** The service manager on RHEL 10, Systemd is the very first process that starts after the kernel has loaded, and it takes care of starting all other processes and services on a Linux system. Unit an item that is managed by Systemd. Different types of units exist, including service, path, mount, and target units. So, basically a **unit** is a configuration object that tells systemd what resource/job it should manage and how.
+
+unit file
+   ↓
+describes what/how to manage
+   ↓
+systemd (manager)
+   ↓
+starts/stops/schedules/etc.
+
+.service  → manage a process/service
+.timer    → schedule/trigger something
+.socket   → manage a socket
+.mount    → manage a filesystem mount
+.target   → group/coordinate other units
+
+systemd  ← the manager
+   ↑
+systemctl ← CLI to talk to/manage it
+
+- systemd = the system/service manager (the daemon is usually systemd, PID 1).
+- systemctl = the command-line tool used to control and query systemd.
 
 - display available list of available units:
     systemctl -t help
@@ -669,3 +690,193 @@ edit the /root/.bash_profile
     export SYSTEMD_EDITOR="/usr/bin/vim"
 and add this line to the ~/.bashrc file.
     After login the vim will be used as a default editor
+
+# Chapter 12 Scheduling Tasks
+
+RHEL 10 offeres different solutions for the scheduling tasks:
+    - Systemd timers as a default solution
+    - **cron** is the legacy scheduler service. But still supported and used.
+    - **at** is used to schedule an occasional user job for the future execution. 
+
+
+### Using Systemd Timers
+A Systemd timer is always used together with a service file, and the names should match.
+
+Example:
+systemctl cat logrotate.timer
+# /usr/lib/systemd/system/logrotate.timer
+[Unit]
+Description=Daily rotation of log files
+Documentation=man:logrotate(8) man:logrotate.conf(5)
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+
+If you need a service to be started by a timer, you enable the timer, not the service.
+
+in case if you want to check with the man pages what are the attibutes or other options available for the systemd units, try below:
+    Section → unit type → man page
+    ex: man systemd.timer
+        OR man systemd.unit
+        OR man systemd.install
+
+Tip: use **man -K RandomizedDelaySec** --> to search accross all man pages if do not know where to search
+    Also use **apropos <key_word>** --> for searching key words accros man pages 
+
+### Exercise 12-1 Using systemd timers
+
+1. Show a list of all the timers
+    systemctl list-units -t timer
+
+2. Show all where logrorate keyword is matched
+    systemctl list-unit-files logrotate.*
+
+3. Check the contents of logrorate.service unit file. Notice: no install section
+    systemctl cat logrotate.service
+
+4. Check the status of service and timer
+    systemctl status logrorate.service
+    AND
+    systemctl status logrorate.timer
+
+5. Install sysstat pacage 
+    dnf install sysstat
+
+6. Check if unit files are added from the systat
+    systemctl list-unit-files sysstat*
+
+7. Check what the sysstat timer is doing
+    systemctl cat sysstat-collect.timer
+    Output:
+        [Timer]
+        OnCalendar=*:00/10
+## Crond 
+
+**Cron timing**:
+minute 0–59 
+hour 0– 23 
+day of month 1–31 
+month 1–12 (or month names) 
+day of week 0–7 (Sunday is 0 or 7) or day names
+
+┌──────── minute       0–59
+│ ┌────── hour         0–23
+│ │ ┌──── day of month 1–31
+│ │ │ ┌── month        1–12
+│ │ │ │ ┌ day of week  0–7
+│ │ │ │ │
+0 0 1 1 *
+minute → hour → day → month → weekday
+
+where **'*'** means every possible value of this particular field.
+
+Thus:
+*  *  *  *  *
+│  │  │  │  │
+│  │  │  │  └─ every weekday
+│  │  │  └──── every month
+│  │  └─────── every day
+│  └────────── every hour
+└───────────── every minute
+
+Example:
+* 11 * * *
+
+where, 11 says  **"during hour 11."** and not at 11. 
+11:00  ✓
+11:01  ✓
+11:02  ✓
+...
+11:59  ✓
+12:00  ✗
+Thus  every minute during the 11th hour, every day of every month, regardless of weekday.
+
+One important cron gotcha
+When both day-of-month and day-of-week are specified, traditional cron usually treats them as **OR**, not **AND**.
+0 9 15 * 1
+
+Example:
+*/15 * * * * Every 15 minutes: 00, 15, 30, 45 of every hour, every day
+
+* */2 * * * Every 2 hours on the hour field
+
+### Manging cron config files
+The main file is /etc/crontab. But to modify the cron jobs:
+    - /etc/cron.d
+    - /etc/cron.hourly, cron.daily, cron.weekly, cron.monthly
+    - user specific files created with **crontab -e**
+
+
+## Anacron
+
+To ensure regular execution of the job, cron uses the anacron service. This service takes care of starting the hourly, daily, weekly, and monthly cron jobs, no matter at which exact time. Anacron uses /etc/anacrontab file.
+File example:
+#period in days   delay in minutes   job-identifier   command
+1	5	cron.daily		nice run-parts /etc/cron.daily
+7	25	cron.weekly		nice run-parts /etc/cron.weekly
+@monthly 45	cron.monthly		nice run-parts /etc/cron.monthly
+
+Where
+    1st column: frequenccy of the job execution in days
+    2nd column: how long anacron waits before executing the job
+    3rd column: job identifier
+
+Limit who can access the cron jobs with:
+    - /etc/cron.allow
+    - /etc/cron.deny
+
+### Exercise 12-2 Running scheduled tasks through cron
+
+1. Check crontab
+    cat /etc/crontab
+
+2. Edit a cron tab
+    crontab -e
+    Add this: 0 2 * * 1-5 logger message from root
+3. Save and close the vim
+4. Create a script in the /etc/cron.hourly
+    cd /etc/cron.hourly
+    echo "logger This message is written at $(date)" > eachhour
+5. Make the script executable
+    chmod +x eachhour
+6. Enter the directory /etc/cron.d and create a new script **eachhour** and put the following code
+    11 * * * * root logger This message is written from /etc/cron.d
+
+7. After couple hours type grep written /var/log/messages and read them
+
+Here is the idea, that inside such files:
+root@localhost:/etc# ls | grep cron
+anacrontab
+cron.d
+cron.daily
+cron.deny
+cron.hourly
+cron.monthly
+crontab
+cron.weekly
+
+like cron.daily, or monthly, the schedule already determined by the file name. And the script will run as per the cron scheduler defined as file name. BUt if put the script inside the cron.d --> the script who determines when it will be run. 
+
+## Configuring **at** schedule future tasks
+    whatis at
+at (1)               - queue, examine, or delete jobs for later execution
+
+### Exercise 12-3 Scheduling Jobs with at
+
+1. Check if atd is enabled and running
+    systemctl status atd
+
+2. Schedule one job with **at** for some time
+    at 18:30
+2.1 Press Enter and exit with Crtl+D
+
+3. Check the queue with the **atq**
+    atq
+
+4. Check the logs if messages appeared there
+    less /var/log/messages

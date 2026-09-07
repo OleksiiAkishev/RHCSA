@@ -641,7 +641,7 @@ The unit files are used to build the functionality that is needed on your server
 2. Active that service
     systemctl start vsftpd
 
-3. Check the statuc
+3. Check the status
     systemctl status vsftpd
     See: loaded (/usr/lib/systemd/system/vsftpd.service; disabled;
         Means the service won't be started after system restart
@@ -880,3 +880,139 @@ at (1)               - queue, examine, or delete jobs for later execution
 
 4. Check the logs if messages appeared there
     less /var/log/messages
+
+# Chapter 13 Configuring logging
+
+Normally 3 ways of log writes are used in Linux:
+    - **systemd-journald**: a service tightly is intergrated with Systemd. Allows administrators to read detailed information from journal. Command: **systemctl status** or **journalctl**
+    -  **dirict write** some services write log directly during runtime. But that approach is not recommended, to have one centralized log service where all logs can be found - much appropriate.
+    - **rsyslogd** is the enhancement of syslogd, a service that takes care of managing centralized log files. 
+Also
+    - **auditd** to keep track of the kernel events
+
+For Linux admins, to understand what is happening on the server:
+    - journalctl
+    - systemctl status <unit>
+    - monitor files in /var/log that are written by rsyslogd; Depends on the service and server configs.
+
+Example: systemctl status sshd -l, shows relavant log information
+
+
+/var/log/messages           This is the most commonly used log file; it is the generic log file where most messages are written to. 
+/var/log/dmesg              Contains kernel log messages. 
+/var/log/secure             Contains authentication-related messages. Look here to see which authentication errors have occurred on a server.  
+/var/log/boot.log           Contains messages that are related to system startup. 
+/var/log/audit/audit.log    Contains audit messages. SELinux writes to this file. 
+/var/log/maillog            Contains mail-related messages. 
+/var/log/httpd/             Contains log files that are written by the Apache web server (if it is installed). Notice that Apache writes messages to these files directly and not through rsyslog.
+
+### Live log file monitoring
+
+See the reak time logging:
+    tail -f <logfile>
+
+### Exercise 13-1 Discovering journalctl
+
+1. Type jounalctl to see the journal since last server started
+    journalctl
+    Use it with **less** and jump to bottom **G**
+    journalctl | less 
+
+2. Check content without pager and Press Ctrl-C to interrupt 
+    journalctl --no-pager
+
+3. Check the live logs with the scrolling option
+    journalctl -f
+
+4. Check the specific option for filtering when use journalctl
+    a. journalctl
+    b. Press space
+    c. Tab 2 times
+    d. Type y (yes) and Enter
+4.1 Now check from the proposed e.g., logs for the user account
+    journalctl _UID=1000
+
+5. Check the last lines of the journal
+    journalctl -n 20
+
+6. Check errors only
+    journalctl -p err
+
+7. To see the logs from or to specific time period use **--since** or **--until**.  Formats: YYYY-MM-DD hh:mm:ss or just yesterday, today, tomorrow. 
+    journalctl --since yesterday
+
+8. Try to combine different options
+    journalctl --since yesterday -p err 
+
+9. To see much more details 
+    journalctl -o verbose
+    THis command shows the different options (e.g. UID, GID, priority, etc) that are used to write logs to journal. 
+    For instance try
+    journalctl -u sshd.service
+    And compare with
+    journalctl -u sshd.service -o verbose
+
+10. Kernel related logs 
+    journalctl --dmesg
+
+Note: Most useful journalctl options 
+    journactl -b    - boot logs
+    journalctl -x   - explanation to information it shows
+    -f              - shows the bottom of the journal
+    -u              - filters for a specific unit only
+
+### Exercise 13-2 Making the systemd journal persistent
+
+1. Create a directory (if not there):
+    mkdir /var/log/journal
+
+2. Use a special systemctl command which allows to keep the persistent state of the logging even after system reboot
+    systemctl restart systemd-journal flush
+
+
+### Configuring rsyslogd
+
+To configure, edit 
+    /etc/rsyslog.conf - central location
+    /etc/rsyslog.d - directory which also included during rsys log run
+
+To see the all rslog facilities, destinations, priorities: man rsyslog.conf
+
+### Exercise 13-3 Changing rsyslog.conf rules
+
+By default the Appache service writes the logs to the own location. With the rsyslog.conf it can be changed. 
+
+1. Add the following line: ErrorLog syslog:local1    
+To the /etc/httpd/conf/httpd.conf
+**Note:** be sure there are no other ErrorLog managed in the same config file, otherwise comment them
+
+2. Restart the httpd service
+    systemctl restart httpd
+
+3. Add line to config file which will send all data to particular facility
+    a. file: /etc/rsyslog.conf
+    b. facility local1
+    c. logs will go: /var/log/httpd-error.log
+    d. the line to be included under #### RULES ####
+    e. line to add: local1.error /var/log/httpd-error.log
+
+4. Reload rsyslogd
+    systemctl restart rsyslog
+
+4.1 Send the logs with the Apache
+    a. logger -p local1.error "TEST local1 message"
+    b. verify the /var/log/httpd-error.log
+
+5. Create a drop-in file for the debug messages to a specific file.
+    echo "*.debug/var/log/messages-debug" > /etc/rsyslog.d/debug.conf
+
+6. Restart rsyslogd
+    systemctl restart rsyslog
+
+7. Check the latest debug messages
+    tail -f /var/log/messages-debug
+
+8. From another terminal
+    logger -p daemon.debug "Daemon Debug Message"
+
+9. From the first terminal where the live latest debug ongoing check if message appeared

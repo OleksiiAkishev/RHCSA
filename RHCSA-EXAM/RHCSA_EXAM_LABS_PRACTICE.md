@@ -263,3 +263,8 @@ sudo systemctl enable --now vsftpd httpd
 
 ## Chapter 12 — Scheduling Tasks
 Create a cron job that performs an update of all software on your computer every evening at 11 p.m. Schedule your machine to be rebooted at 3 a.m. tomorrow morning. Use a Systemd timer to start the vsftpd service five minutes after your system has started.
+
+## Chapter 13 - Configuring logging
+Configure the journal to be persistent across system reboots. Make a configuration file that writes all messages with an info priority to the file /var/log/messages.info. Configure logrotate to keep 10 old versions of log files.
+
+## Chapter 14 - Managing storage

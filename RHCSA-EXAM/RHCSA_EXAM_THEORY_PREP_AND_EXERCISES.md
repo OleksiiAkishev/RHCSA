@@ -1016,3 +1016,30 @@ To the /etc/httpd/conf/httpd.conf
     logger -p daemon.debug "Daemon Debug Message"
 
 9. From the first terminal where the live latest debug ongoing check if message appeared
+
+## Rotating log files
+To not overflow the system with logs, based on the threshold the old logs can be closed and new can be opened. As a default **4** old log files are kept on the server, older than those will be automatically removed.
+File name example, of the rotated(old) log file: /var/log/messages-20260608. Note, there is no default job which backups old logs if so needed the centilized log backup server to be configured.
+
+Default settings for rotating are kept under: /etc/logrotate.conf
+
+## Using logger
+
+The **logger** command allows to the users enter the logs to the terminal which will be passed to the rsyslog.
+
+### Exercise 13-4 Using Live Log Monitoring and logger
+
+1. Open a root shell
+2. Check the live tailed logs
+    tail -f /var/log/messages
+3. In another terminal log to the student account
+    su - student
+4. Type **su -** to open a root shell but put the wrong password
+5. See the log files now in the /var/log/messages from another window
+6. Type from student shell
+    logger hello
+6.1 Confirm logs from root shell
+7. From root, check the latest security logs
+    tail -20 /var/log/messages
+
+# Chapter 14 - Managing storage

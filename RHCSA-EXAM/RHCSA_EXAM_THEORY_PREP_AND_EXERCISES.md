@@ -1665,3 +1665,76 @@ If need changes, do a refresh with **sudo systemctl daemon-reload**.
 
 6. Check the unit file
     systemctl status exercise.mount
+
+# Chapter 15 - Managing logical volumes
+
+**LVM (Logical Volume Manager)** - a solution for the limitation of the traditional partitions. 
+
+Partitions:
+Disk
+├── partition 1 → /boot
+├── partition 2 → /
+├── partition 3 → /home
+└── partition 4 → ...
+
+In this case they are **rigid** no flexible. 
+
+For example:
+/dev/sda
+┌──────────┬──────────────────────┬──────────┐
+│ /boot    │          /           │  /home   │
+│ 1 GB     │       20 GB          │  20 GB   │
+└──────────┴──────────────────────┴──────────┘
+The root / becomes full, now we want to take 10 free GB from the /home, that is where the LVM comes.
+And now instead of: Disk -> Partition -> File System
+We get: Disk -> Partition -> LVM -> Logical Vilume -> File System -> Mount Point
+
+**Logical Volume (LV)** behaves like a normal disk/partition from the filesystem's perspective. 
+Physical storage
+┌─────────────────────────────────────┐
+│                                     │
+│          LVM storage pool           │
+│                                     │
+└─────────────────────────────────────┘
+          ↓          ↓          ↓
+       LV root    LV home     LV data
+         ↓           ↓           ↓
+       XFS         XFS         XFS
+         ↓           ↓           ↓
+         /          /home       /data
+
+LVM lets you treat physical storage as a pool of storage, then allocate pieces of that pool as logical volumes.
+And later you can often resize those logical volumes much more flexibly than traditional partitions.
+Note: not all file systems allow growing and shrinking. E.g., ext4 supports both, where XFS only growing.
+A snapshot is a good advantage why to use LVM. Also moving the data from the failed hard drive is easier with the logical volumes.
+
+## Creating LVM logical volumes
+1. Convert physical devices (such as disks or partitions) into physical volumes (PVs)
+2. Create a volume group (VG) and assign PV to it. 
+3. Create the logical volume (LV) itself.
+
+For exam: pv, vg, lv
+
+### Exercise 15-1 Creating a Physical Volume
+1. With **fdisk** create a new 1 GB partition 
+2. Select a type of the partition
+    **t** 
+Choose **lvm**
+3. See output of print now
+    /dev/nvme0n2p1  2048 2099199 2097152   1G Linux LVM
+4. Create 3 more LVMs for other usage. And write changes
+Output:
+Device           Start     End Sectors  Size Type
+/dev/nvme0n2p1    2048 2099199 2097152    1G Linux LVM
+/dev/nvme0n2p2 2099200 3123199 1024000  500M Linux LVM
+/dev/nvme0n2p3 3123200 4147199 1024000  500M Linux LVM
+/dev/nvme0n2p4 4147200 5171199 1024000  500M Linux LVM
+5. Use lsblk 
+6. Mark a partition as an LVM physical volume. --> THis is an actual creation of the PV
+    output:   Physical volume "/dev/nvme0n2p1" successfully created.
+7. Check if PV was created
+    sudo pvs
+Output:
+PV             VG   Fmt  Attr PSize   PFree
+  /dev/nvme0n1p3 rhel lvm2 a--  <39.00g    0 
+  /dev/nvme0n2p1      lvm2 ---    1.00g 1.00g

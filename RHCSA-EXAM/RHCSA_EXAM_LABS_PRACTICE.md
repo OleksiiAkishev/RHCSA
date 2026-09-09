@@ -268,3 +268,5 @@ Create a cron job that performs an update of all software on your computer every
 Configure the journal to be persistent across system reboots. Make a configuration file that writes all messages with an info priority to the file /var/log/messages.info. Configure logrotate to keep 10 old versions of log files.
 
 ## Chapter 14 - Managing storage
+Add two partitions to your server. Create both partitions with a size of 100 MiB. One of these partitions must be configured as swap space; the other partition must be formatted with an Ext4 file system.
+Configure your server to automatically mount these partitions using the UUID of each. Mount the Ext4 partition on /mounts/data and mount the swap partition as swap space. Reboot your server and verify that all is mounted correctly. In case of problems, read Chapter 18, “Essential Troubleshooting Skills,” for tips on how to troubleshoot.

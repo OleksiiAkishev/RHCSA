@@ -159,7 +159,7 @@ sr0            11:0    1  9.5G  0 rom  /repo
 
 d. Edit /etc/fstab
     1) What is the fstab?
-        fstab (filesystem table) is a configuration file that tells Linux about filesystems that should be mounted. And lies under /etc/fstab, it is a basic instructions list. 
+        fstab (filesystem table/static information about the filesystems) is a configuration file that tells Linux about filesystems that should be mounted. And lies under /etc/fstab, it is a basic instructions list. 
 
     2) mount vs fstab:
         mount is command which executes right now, once it has been ran. Normally lost after reboot.
@@ -1043,3 +1043,625 @@ The **logger** command allows to the users enter the logs to the terminal which 
     tail -20 /var/log/messages
 
 # Chapter 14 - Managing storage
+
+**Partition** logic split of the disk.
+
+Physical disk
+┌──────────────────────────────────────────────┐
+│                                              │
+│          one big physical storage            │
+│                                              │
+└──────────────────────────────────────────────┘
+
+Disk
+┌──────────────┬──────────────────┬───────────┐
+│ Partition 1  │   Partition 2    │ Partition3│
+│              │                  │           │
+└──────────────┴──────────────────┴───────────┘
+
+WHy need partitions?
+    For example:
+    Disk
+┌──────────────┬───────────────┬──────────────┐
+│ /boot        │ /             │ /home        │
+│ 1 GB         │ 50 GB         │ 100 GB       │
+└──────────────┴───────────────┴──────────────┘
+
+The above approache of the partiitons gives ability:
+    - to not mix the data of /home with /boot
+    - able to restore OS by not touching data in /home
+    - etc
+
+Thus:
+Physical disk
+      ↓
+Partition
+      ↓
+Filesystem
+      ↓
+Directories/files
+
+MBR (Master Boot Record) - partition scheme. On a BIOS system, the first 512 bytes on the primary hard disk. It contains a boot loader and a partition table that give access to the different partitions on the hard disk of that computer.
+
+With the new computers the new scheme comes up as the MBR cannot handle that. It is GPT (GUID Partition Table). GPT is a modern solution to store partitions on a hard disk, as opposed to the older MBR partition table. In GUID partitions, a total of 128 partitions can be created, and no difference exists between primary, extended, and logical partitions anymore.
+
+UEFI (Unified Extensible Firmware Interface) - the replacment of the old BIOS system.
+
+MBR
+├── old
+├── limited
+├── widely supported by old firmware/OS
+└── ~2 TB disk limit
+
+GPT
+├── modern
+├── supports huge disks
+├── more partitions
+├── more robust
+└── normally used with UEFI
+
+GPT → modern RHEL → normal/default → know well
+
+MBR → legacy → less common → understand it + recognize it
+
+## Understanding storage measurement units
+
+MB (megabyte): is muptiple(кратне) of 1000
+MiB (mebibyte) - is muptiple of 1024
+
+## Managing partitions and File systems
+
+Top commands:
+
+- **fdisk** (manipulate disk partition table)
+- **parted** (a partition manipulation program)
+- **gdisk**
+
+/dev is the Linux device filesystem
+
+Common Disk Device Types
+
+/dev/sda                A hard disk that uses the SCSI driver. It is used for SCSI and SATA disk devices and is common on physical servers but also in VMware virtual machines. 
+/dev/nvme0n1            The first hard disk on an NVM Express (NVMe) interface. NVMe is a server-grade method to address advanced SSD devices. At the end of the device name, note that the first disk in this case is referred to as n1 instead of a (as is common with the other types). NVMe is the storage interface/protocol; it isn't a partitioning scheme.
+/dev/hda                The (legacy) IDE disk device type. You will seldom see this device type on modern computers.
+/dev/vda                disk in a KVM virtual machine that uses the virtio disk driver. This is the common disk device type for KVM virtual machines.
+/dev/xvda               disk in a Xen virtual machine that uses the Xen virtual disk driver. You see this when installing RHEL as a virtual machine in Xen virtualization. RHEL 10 cannot be used as a Xen hypervisor, but you might see RHEL virtual machines on top of the Xen hypervisor using these disk types.
+
+### Exercise 14-1 Creating MBR Partitions with fdisk
+
+1. Check the list of lock devices. 
+    lsblk
+Example output:
+NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sr0            11:0    1  9.5G  0 rom  /repo
+nvme0n1       259:0    0   40G  0 disk 
+├─nvme0n1p1   259:1    0    1M  0 part 
+├─nvme0n1p2   259:2    0    1G  0 part /boot
+└─nvme0n1p3   259:3    0   39G  0 part 
+  ├─rhel-root 253:0    0 35.1G  0 lvm  /
+  └─rhel-swap 253:1    0  3.9G  0 lvm  [SWAP]
+
+There is only one disk is used. Thus it is better to add one more disk for such exercise. If VMWare, add one with UI. 
+
+VMWare proposes several types of disks to be added, and the nvme is a recommended one. But if chose the different storage interface/protocol nothing specifically won't happen. Hence, keep the recommended from VMWare as nvme adn create a new disk with 3 GB.
+
+2. Now check with lsblk
+    Output:
+        NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sr0            11:0    1  9.5G  0 rom  /repo
+nvme0n1       259:0    0   40G  0 disk 
+├─nvme0n1p1   259:1    0    1M  0 part 
+├─nvme0n1p2   259:2    0    1G  0 part /boot
+└─nvme0n1p3   259:3    0   39G  0 part 
+  ├─rhel-root 253:0    0 35.1G  0 lvm  /
+  └─rhel-swap 253:1    0  3.9G  0 lvm  [SWAP]
+nvme0n2       259:4    0    3G  0 disk
+
+3. Use a **fdisk** command to create partitions
+    sudo fdisk /dev/nvme0n2
+
+4. Check how much space is available, inside **fdisk**
+    p
+output:
+    Command (m for help): p
+    Disk /dev/nvme0n2: 3 GiB, 3221225472 bytes, 6291456 sectors
+    Disk model: VMware Virtual NVMe Disk
+    Units: sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disklabel type: dos
+    Disk identifier: 0x107a6c8d
+
+4.1 After several promts for partition number, first sector, last sector the partition was created
+
+Command (m for help): n
+Partition type
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended (container for logical partitions)
+Select (default p): p
+Partition number (1-4, default 1): 
+First sector (2048-6291455, default 2048): 
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-6291455, default 6291455): 
+
+Created a new partition 1 of type 'Linux' and of size 3 GiB.
+
+4.2 If all good with the proposed changes, type **w** to write them to the system. 
+
+5. Check the block list again
+    lsblk
+output:
+NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sr0            11:0    1  9.5G  0 rom  /repo
+nvme0n1       259:0    0   40G  0 disk 
+├─nvme0n1p1   259:1    0    1M  0 part 
+├─nvme0n1p2   259:2    0    1G  0 part /boot
+└─nvme0n1p3   259:3    0   39G  0 part 
+  ├─rhel-root 253:0    0 35.1G  0 lvm  /
+  └─rhel-swap 253:1    0  3.9G  0 lvm  [SWAP]
+nvme0n2       259:4    0    3G  0 disk 
+└─nvme0n2p1   259:6    0    3G  0 part 
+
+### Exercise 14-2 Creating Logical Partitions
+
+1. In root type, to open a fdisk interface
+    sudo fdisk /dev/nvme0n2
+
+2. Type **n** for the new partition
+    If see that all in use:
+            Command (m for help): n
+             All space for primary partitions is in use.
+That means that there is no more space in the /dev/nvme0n2 to have another partition. 
+Note: Disklabel type: dos, means MBR partition scheme
+Thus, we will try to undo the previous steps on the exercises 14-1 by removing the previously created partition and create new one with the less memory usage.
+
+2.1 Check the current partition
+    p
+Output:
+Disk /dev/nvme0n2: 3 GiB, 3221225472 bytes, 6291456 sectors
+Disk model: VMware Virtual NVMe Disk
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0x107a6c8d
+
+Device         Boot Start     End Sectors Size Id Type
+/dev/nvme0n2p1       2048 6291455 6289408   3G 83 Linux
+
+3. Delete partition
+    d 
+
+4. Check again
+    p
+Output:
+Disk /dev/nvme0n2: 3 GiB, 3221225472 bytes, 6291456 sectors
+Disk model: VMware Virtual NVMe Disk
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0x107a6c8d
+
+Now there is no partition
+
+5. Create a new partition
+    n
+5.1 For the last sector type:
+    +1G
+Press Enter, the msg will appear:
+    Created a new partition 1 of type 'Linux' and of size 1 GiB.
+
+6. Check with **p**
+Output:
+Disk /dev/nvme0n2: 3 GiB, 3221225472 bytes, 6291456 sectors
+Disk model: VMware Virtual NVMe Disk
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0x107a6c8d
+
+Device         Boot Start     End Sectors Size Id Type
+/dev/nvme0n2p1       2048 2099199 2097152   1G 83 Linux
+
+6.1 Write the changes
+    w
+
+7. Create a new extended partition.
+    Back to the fdisk and type **n**
+
+7.1 Type **e** (extended)
+Again follow the promts and for the last sector type: **+1G**
+
+8. Create a logical partition
+    Back to fdisk
+
+8.1 Select **l**
+    Answer to promts, for the last use +1G or default. 
+
+9. Verify **p**, write **w**, check with **lsblk**
+Outputs:
+Disk /dev/nvme0n2: 3 GiB, 3221225472 bytes, 6291456 sectors
+Disk model: VMware Virtual NVMe Disk
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0x107a6c8d
+
+Device         Boot   Start     End Sectors  Size Id Type
+/dev/nvme0n2p1         2048 2099199 2097152    1G 83 Linux
+/dev/nvme0n2p2      2099200 4196351 2097152    1G  5 Extended
+/dev/nvme0n2p5      2101248 4196351 2095104 1023M 83 Linux
+
+lsblk
+NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sr0            11:0    1  9.5G  0 rom  /repo
+nvme0n1       259:0    0   40G  0 disk 
+├─nvme0n1p1   259:1    0    1M  0 part 
+├─nvme0n1p2   259:2    0    1G  0 part /boot
+└─nvme0n1p3   259:3    0   39G  0 part 
+  ├─rhel-root 253:0    0 35.1G  0 lvm  /
+  └─rhel-swap 253:1    0  3.9G  0 lvm  [SWAP]
+nvme0n2       259:4    0    3G  0 disk 
+├─nvme0n2p1   259:8    0    1G  0 part 
+├─nvme0n2p2   259:9    0    1K  0 part 
+└─nvme0n2p5   259:10   0 1023M  0 part 
+
+### Exercise 14-3 Creating GPT Partitions
+
+Prerequisites: there previous disk can be used. For that remove all the partitions with the **d** option by selecting the right one. Then write the changes **w**.
+
+1. In the fdisk for the disk nvme0n2, type **g** which will change the type of the partition table to 
+**Disklabel type: gpt**
+
+Output p:
+p
+
+Disk /dev/nvme0n2: 3 GiB, 3221225472 bytes, 6291456 sectors
+Disk model: VMware Virtual NVMe Disk
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: gpt
+Disk identifier: F4047196-D228-4814-95AD-1FA1215D44CD
+
+1.1 Write changes
+
+2. Come back to fdisk and check with **p**
+
+3. Type **n**, now see the difference it is proposing from 1-128 against 1-4 as for the MBR. 
+    Select by default 1.
+3.1 First sector, also default
+3.2 Last sector, if default it takes the whole disk, thus can specify +1G
+3.3 Check with **p**
+3.4 Write changes
+4. Check with lsblk
+5. If error that the table is in use, use **partprobe** to update the kernel partition table.
+
+### Exercise 14-4 Creating Partitions with parted
+Note: **parted** is lack latest builds on the latest RHELs
+
+1. From root, type
+    parted /dev/nvme0n2
+It will open a GNU parted
+2. Use **help** to available commands, type **print** to see unrecognized disk labels.
+Output:
+(parted) print                                                            
+Model: VMware Virtual NVMe Disk (nvme)
+Disk /dev/nvme0n2: 3221MB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+
+3. Type **mklabel** and press Enter. 
+After promt **tab** 2 times to see the available options
+Output:
+    aix    amiga  atari  bsd    dvh    gpt    loop   mac    msdos  pc98   sun
+
+Use **gpt**
+See the promted Warning: The existing disk label on /dev/nvme0n2 will be destroyed and all data on this disk will be lost. Do you want to continue?
+
+4. After typed **Yes**, use another command for partition creation **mkpart**
+    Partition name: part1
+    File system: default ext2 or xfs Note: use twice **Tab** to see the options
+    Start(sector) : 1MiB
+    End: 1GiB
+
+5. Print with **print** what we have now. 
+    Output:
+        Model: VMware Virtual NVMe Disk (nvme)
+        Disk /dev/nvme0n2: 3221MB
+        Sector size (logical/physical): 512B/512B
+        Partition Table: gpt
+        Disk Flags: 
+                Number  Start   End     Size    File system  Name   Flags
+                1      1049kB  1074MB  1073MB  xfs          part1
+
+6. Type **quit**, this will commit all the changes
+
+7. Check with lsblk
+    Output:
+    nvme0n2       259:4    0    3G  0 disk 
+    └─nvme0n2p1   259:6    0 1023M  0 part 
+
+## Creating File systems
+Once the partition is created still it cannot be used, the file system has to be created there. 
+
+File System             Overview
+XFS                     The default file system in RHEL 10. 
+Ext4                    The default file system in previous versions of RHEL; it is still available and supported in RHEL 10. 
+Ext3                    The previous version of Ext4. On RHEL 10, there is no need to use Ext3 anymore. 
+Ext2                    A basic file system that was developed in the early 1990s. There is no need to use this file system on RHEL 10 anymore. 
+BtrFS                   A relatively new file system that is not supported in RHEL 10. 
+NTFS                    A Windows-compatible file system that is not supported on RHEL 10. 
+VFAT                    A file system that offers compatibility with Windows and macOS and is the functional equivalent of the FAT32 file system. It is useful on USB thumb drives that exchange data with other computers but not on a server’s hard disks.
+
+What is the File System?
+A filesystem is the system that organizes raw storage into files and directories.
+A partition it is just a range of blocks:
+        /dev/nvme0n2p1
+        ┌──────────────────────────────────────┐
+        │ blocks │ blocks │ blocks │ blocks... │
+        └──────────────────────────────────────┘
+The file system tells **how the storage is organized and managed** it is not about file types it can have (txt, gpg, sql, etc).
+
+Example, what is the file system:
+
+1 GB partition:
+/dev/nvme0n2p1
+┌─────────────────────────────────────┐
+│ 1 GB of raw storage blocks          │
+│                                     │
+│ 000 001 002 003 004 005 ... 262143  │
+└─────────────────────────────────────┘
+These are just numbered chunks of storage. There is no concept of **photos/birthday.jpg**
+What the **XFS** (or any other) gives us? When mkfs.xfs /dev/nvme0n2p1, now the XFS puts its own management structures onto that storage. 
+Very simplified example:
+/dev/nvme0n2p1
+┌───────────────────────────────────────────┐
+│ XFS metadata │ file data │ free space ... │
+└───────────────────────────────────────────┘
+Then we mount: mount /dev/nvme0n2p1 /data ; And now we can do **echo "hello" > /data/test.txt**
+
+So, file system:
+    - Where it should go? test.txt --> blocks 1834, 1835, 1836...
+    - Metadata (remembering that data):
+        test.txt
+        ├── owner = root
+        ├── permissions = 644
+        ├── size = 6 bytes
+        ├── modification time = ...
+        └── data = blocks 1834-1836
+
+**Another File system Example:**
+
+Well known that on the Windows we have **NTFS (New Technology File System)** file system. Means organized with NTFS rules. So, Windows can understand:
+C:\
+├── Windows\
+├── Users\
+├── Program Files\
+└── myfile.txt
+
+USB as **FAT32** 
+USB
+└── FAT32 filesystem
+    ├── photo.jpg
+    ├── document.txt
+    └── video.mp4
+Why FAT for USBs?
+NTFS
+    ↓
+excellent for Windows
+but less universally supported by devices
+FAT32
+    ↓
+very widely supported
+Windows, Linux, macOS, cameras, TVs, old devices, etc.
+
+So, we can say that the filesystem determines how those files are represented and managed on the storage.
+Filesystem = rules + data structures used to manage files on the storage
+
+To format a partition the **mkfs** command can be used, with the option **-t** by specifying which file system to be there. If no specific choosen the **ext2** will be used. 
+
+### Exercise 14-5 Creating a File System
+
+Prerequisites:
+    To check what is the current file system on the partition use
+    **lsblk -f**
+Output:
+NAME          FSTYPE      FSVER            LABEL                   UUID                                   FSAVAIL FSUSE% MOUNTPOINTS
+sr0           iso9660     Joliet Extension RHEL-10-1-BaseOS-x86_64 2025-10-21-06-14-30-00                       0   100% /repo
+nvme0n1                                                                                                           
+├─nvme0n1p1                                                                                                       
+├─nvme0n1p2   xfs                                                  b38e3495-a851-47f1-946c-0e4b32c0a8b4    368.9M    62% /boot
+└─nvme0n1p3   LVM2_member LVM2 001                                 X9piS8-5XDU-KxYt-9xap-cFV1-3nq6-HDPwIP                
+  ├─rhel-root xfs                                                  95547bc3-3ba2-44dc-9415-8d0d97fa6530       28G    20% /
+  └─rhel-swap swap        1                                        f753112b-7583-4e7a-ab9e-14b89cb0389a                  [SWAP]
+nvme0n2                                                                                                           
+└─nvme0n2p1  
+
+1. From the previously created partition **/dev/nvme0n2p1** create a XFS file system
+    mkfs.xfs /dev/nvme0n2p1
+
+## Changing file system properties
+For example to manage the Ext4 file system properties. Use the tool: **tune2fs**
+For the XFS file system there are different tools. 
+
+## Adding swap partitions
+Swap - disk/SSD space used as an extension/backing area for memory. 
+
+In **Linux**
+RAM is the fast working area:
+          RAM
+     ┌──────────────┐
+     │ Running apps │
+     │ Kernel       │
+     │ Cached data  │
+     └──────────────┘
+
+When RAM becomes pressured, Linux can move some less actively used memory pages from RAM to swap: 
+RAM                         Swap
+┌──────────────┐           ┌──────────────┐
+│ active data  │           │ less active  │
+│ active apps  │  <---->   │ memory pages │
+│ kernel       │           │              │
+└──────────────┘           └──────────────┘
+        ↑                         ↑
+     very fast                disk/SSD  
+
+What is the **swap partition**?
+It is simply a partition which is used for a swap. A kernel manages to put them there. 
+
+
+### Exercise 14-6 Creating a Swap Partition
+
+1. Open a disk tool for partition
+    fdisk /dev/nvme0n2
+
+2. Create a 1 GB partition as did before in previous exercises.
+3. Change partition type 
+    **t**
+    Select partition if not one there
+    type **L** to see all
+    type **swap**
+output:
+evice           Start     End Sectors  Size Type
+/dev/nvme0n2p1    2048 2097151 2095104 1023M Linux filesystem
+/dev/nvme0n2p2 2097152 4194303 2097152    1G Linux swap
+
+4. Write changes **w**
+
+5. Format partition as swap space. 
+    mkswap /dev/nvme0n2p2
+
+6. Check the amount of the swap currently used
+    free -m
+Output:
+               total        used        free      shared  buff/cache   available
+Mem:            3621        1445        1496           7         912        2175
+Swap:           4007           0        4007
+
+7. Switch to newly allocated space
+    swapon /dev/nvme0n2p2
+
+8. Check the free space with **free -m**
+    Output:
+                   total        used        free      shared  buff/cache   available
+    Mem:            3621        1438        1502           7         912        2182
+    Swap:           5031           0        5031
+
+9. To make sure that the swap is also alvailable after reebot, add the following line to the **/etc/fstab**
+    **/dev/nvme0n2p2 none swap defaults 0 0**
+
+Note: if there are no reources or time to have the swap partition, the swap file can be used for that. In fact, there is no much difference in the performance perpective, etc by using a file.
+    Exmaple:
+        a. dd if=/dev/zero of=/swapfile bs=1M count=100
+        b. mkswap /swapfile
+        c. swapon /swapfile
+
+## Mounting File systems
+Just to create a partition and putting a file system on it are not enough to start using it. To use it, we also need to mount it. By mounting it, we make it accessible thorugh the specific directory.
+    For mountin steps:
+        - What to mount? - name of the device to be mounted
+        - Where to mount? - specifies the directory on which the device should be mounted
+        - What file system to be mount? - optionally can be specified, but normally not required, detected by mount command
+        - What are the mount options? - optional, but still can use many options if need. 
+
+Mount a file system : **mount**
+Umnount a file system : **umount** Note: NOT **uN** but **u**
+
+Example mount the /dev/nvme0n2p1 to some folder.
+    a. show the current blocks: lsblk
+        nvme0n2       259:4    0    3G  0 disk 
+        ├─nvme0n2p1   259:5    0 1023M  0 part 
+        └─nvme0n2p2   259:8    0    1G  0 part [SWAP]
+    b. create a tmp directory in the root
+        sudo mkdir /mount-test-disk
+    c. mount a partition with the file system
+        sudo mount /dev/nvme0n2p1 /mount-test-disk
+    d. check with the block devices
+        nvme0n2       259:4    0    3G  0 disk 
+        ├─nvme0n2p1   259:5    0 1023M  0 part /mount-test-disk
+        └─nvme0n2p2   259:8    0    1G  0 part [SWAP]
+    Can see the mount place now as /mount-test-disk
+
+To get the system overview for the blocks UUID: **blkid**. Note: use with sudo to see all the block devices.  Thus the mounting can be done based on the UUID rather than the device name (e.g ├─nvme0n2p3 use UUID). Example:
+blkid
+/dev/mapper/rhel-root: UUID="95547bc3-3ba2-44dc-9415-8d0d97fa6530" BLOCK_SIZE="512" TYPE="xfs"
+/dev/nvme0n1p3: UUID="X9piS8-5XDU-KxYt-9xap-cFV1-3nq6-HDPwIP" TYPE="LVM2_member" PARTUUID="125e7e06-e9ed-4743-b5a5-ec64b181353d"
+/dev/sr0: BLOCK_SIZE="2048" UUID="2025-10-21-06-14-30-00" LABEL="RHEL-10-1-BaseOS-x86_64" TYPE="iso9660" PTTYPE="PMBR"
+
+Normally manuall file systems mounting it is not the efficient one, better to do it with the /etc/fstab
+Example of it:
+UUID=95547bc3-3ba2-44dc-9415-8d0d97fa6530 /                       xfs     defaults        0 0
+UUID=b38e3495-a851-47f1-946c-0e4b32c0a8b4 /boot                   xfs     defaults        0 0
+UUID=f753112b-7583-4e7a-ab9e-14b89cb0389a none                    swap    defaults        0 0
+/dev/sr0 /repo iso9660 defaults 0 0
+
+where we already can see the ROM device is mounted in the auto mode for read/write ISO file. Or the /boot one.
+
+### Exercise 14-7 Mounting Partitions Through /etc/fstab
+
+1. Copy one UUID which has to be mounted from **blkid**
+    Example: /dev/nvme0n2p1: UUID="39c449e5-6ed8-4c67-a847-39ca088ebc79" BLOCK_SIZE="512" TYPE="xfs" PARTUUID="5d1142e1-bc0e-4016-b5c1-2507555e28f5"
+
+2. Create a tmp folder now.
+    sudo mkdir /swap_mount-test
+
+3. Add the following line in the /etc/fstab
+    UUID="39c449e5-6ed8-4c67-a847-39ca088ebc79 /swap_mount-test xfs defaults 0 0
+
+4. By not testing it directly with rebooting, it is good to check directly with the **mount -a**
+    if any errors, it gives:
+        mount: /etc/fstab: parse error at line 16 -- ignored
+After all compiler errors fixed:
+    mount: (hint) your fstab has been modified, but systemd still uses
+       the old version; use 'systemctl daemon-reload' to reload.
+
+5. Verify with the lsblk
+    nvme0n2       259:4    0    3G  0 disk 
+    └─nvme0n2p1   259:5    0    1G  0 part /mount_from_fstab
+
+If need changes, do a refresh with **sudo systemctl daemon-reload**.
+
+### Exercise 14-8 Creating a Systemd Mount File
+
+1. Format /dev/nvme0n2p1 file into ext4
+    mkfs.ext4 /dev/nvme0n2p1
+
+2. Create a folder for future mount point at the root
+    mkdir exercise
+
+3. Modify the systemd mount file
+    vim /etc/systemd/system/exercise.mount
+
+    Add following:
+    [Unit]
+    Before=local-fs.target
+
+    [Mount]
+    What=/dev/nvme0n2p1
+    Where=/exercise
+    Type=ext4
+
+    [Install]
+    WantedBy=multi-user.target
+
+4. Enable and start the mount unit
+    systemctl enable --now exercise.mount
+
+5. Check if mount was created
+    mount | grep exercise
+
+    Output:
+    mount | grep exercise
+    /dev/nvme0n2p1 on /exercise type ext4 (rw,relatime,seclabel)
+
+    ls output of /:
+    /$ ls exercise
+    lost+found
+
+6. Check the unit file
+    systemctl status exercise.mount

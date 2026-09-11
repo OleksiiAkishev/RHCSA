@@ -270,3 +270,6 @@ Configure the journal to be persistent across system reboots. Make a configurati
 ## Chapter 14 - Managing storage
 Add two partitions to your server. Create both partitions with a size of 100 MiB. One of these partitions must be configured as swap space; the other partition must be formatted with an Ext4 file system.
 Configure your server to automatically mount these partitions using the UUID of each. Mount the Ext4 partition on /mounts/data and mount the swap partition as swap space. Reboot your server and verify that all is mounted correctly. In case of problems, read Chapter 18, “Essential Troubleshooting Skills,” for tips on how to troubleshoot.
+
+## Chapter 15 - Managing Logical Volumes
+Create a 500-MB logical volume named lvgroup. Format it with the XFS file system and mount it persistently on /groups. Reboot your server to verify that the mount works. After rebooting, add another 250 MB to the lvgroup volume that you just created. Verify that the file system resizes as well while resizing the volume. Verify that the volume extension was successful.

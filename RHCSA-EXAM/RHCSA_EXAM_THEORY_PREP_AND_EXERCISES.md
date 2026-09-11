@@ -1738,3 +1738,328 @@ Output:
 PV             VG   Fmt  Attr PSize   PFree
   /dev/nvme0n1p3 rhel lvm2 a--  <39.00g    0 
   /dev/nvme0n2p1      lvm2 ---    1.00g 1.00g
+OR with pvdisplay
+output:
+  --- Physical volume ---
+  PV Name               /dev/nvme0n1p3
+  VG Name               rhel
+  PV Size               <39.00 GiB / not usable 0   
+  Allocatable           yes (but full)
+  PE Size               4.00 MiB
+  Total PE              9983
+  Free PE               0
+  Allocated PE          9983
+  PV UUID               X9piS8-5XDU-KxYt-9xap-cFV1-3nq6-HDPwIP
+   
+  "/dev/nvme0n2p1" is a new physical volume of "1.00 GiB"
+  --- NEW Physical volume ---
+  PV Name               /dev/nvme0n2p1
+  VG Name               
+  PV Size               1.00 GiB
+  Allocatable           NO
+  PE Size               0   
+  Total PE              0
+  Free PE               0
+  Allocated PE          0
+  PV UUID               PBts37-SeDU-UDyL-gq6d-ueNC-D4Fx-xJTKrE
+
+## Creating the volume groups (VG)
+
+As we created a PV we can now assing it to a volume group (VG).
+Command to greate a VG is **vgcreate**. Thus **vgcreate <name_of_volume> <source_PV>
+An output:
+    Volume group "my_new_volume_groups" successfully created
+
+Note: if directly use the vgcreate on the disk which is not created a PV, the vgcreate will automatically mark it as PV. 
+
+Now, use **sudo pvs** to see the PVs and their VGs
+Output:
+PV               VG                   Fmt  Attr PSize    PFree   
+  /dev/nvme0n1p3 rhel                 lvm2 a--   <39.00g       0 
+  /dev/nvme0n2p1 my_new_volume_groups lvm2 a--  1020.00m 1020.00m
+OR **sudo vgs** OR **vgdisplay**
+
+## Creating the logical volume (LG) and file systems
+Now, the last step from the process of creation LVM logical volumes. As we have a group now, we can create a LV from it.
+
+To create a LG there more options can be selected during creation, some of them:
+    - **-L <size>**, -L 5G - to create a LVM colume with a 5GiB size
+    - **-l <percentage>FREE** -l 50%FREE - to create by using half free available disk space
+    - **-n** -n my_logical_volume - to specify a particular name for a LV
+
+### Exercise 15-2 Creating the Volume Group and Logical Volumes
+
+1. Open root. Check the previously created PVs, if not create.
+    pvs
+2. Create a VG (if not the case)
+    vgcreate <VG_name> <Source_PV>
+    Example: sudo vgcreate my_new_volume_groups /dev/nvme0n2p1
+
+3. Check if created with
+    pvs OR vgs
+
+4. Create LVM LV with the desire name, which will use 50 % of the free disk space
+    lvcreate -n <lv_name> -l 50%FREE <vg_name>
+    example: lvcreate -n <lv_name> -l 50%FREE my_new_volume_groups
+
+5. Check LVs 
+    lvs
+output:
+  LV        VG                   Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  my_new_lv my_new_volume_groups -wi-a----- 508.00m                                                    
+  root      rhel                 -wi-ao----  35.08g                                                    
+  swap      rhel                 -wi-ao----   3.91g 
+
+6. Now the File system can be created on top of the logical volume
+    mkfs.ext4 /dev/<volume_group_name>/<logical_volume_name>
+    sudo mkfs.ext4 /dev/my_new_volume_groups/my_new_lv
+
+7. Now edit /etc/fstab to inlcude automount on startup
+    /dev/my_new_volume_groups/my_new_lv /files ext4 defaults 0 0
+
+8. Create at the root, /files folder and check mount with -a
+    sudo mount -a
+9. Check with lsblk that partition was mounted
+    lsblk
+output:
+nvme0n2                            259:4    0    3G  0 disk 
+├─nvme0n2p1                        259:5    0    1G  0 part 
+│ └─my_new_volume_groups-my_new_lv 253:2    0  508M  0 lvm  /files
+├─nvme0n2p2                        259:6    0  500M  0 part 
+├─nvme0n2p3                        259:7    0  500M  0 part 
+└─nvme0n2p4                        259:8    0  500M  0 part 
+
+## Resizing LVM LVs
+
+This is the one of the greatest benefit of using LVM LVs. If the system is running out of available disk space. 
+
+**Resizing VG (volume groups)**
+    vgextend
+    vgreduce
+    vgs - for verify
+
+Steps:
+1. Make sure a free space is available in the VG
+    sudo vgs
+  VG                   #PV #LV #SN Attr   VSize    VFree  
+  my_new_volume_groups   1   1   0 wz--n- 1020.00m 512.00m
+  rhel                   1   2   0 wz--n-  <39.00g      0 
+
+Can see here that 512 MB are free in the VG
+
+2. Use **vgextend** to extend the group
+
+**Resizing LVs and File Systems**
+For extension of LVs - **lvextend** or **lvresize**
+Example: **lvresize -L +512MiB -r /dev/my_new_volume_groups/my_new_lv
+Some other options:
+    - lvresize -r -l 75%VG /dev/my_new_volume_groups/my_new_lv --> takes 75% of the total disk space in VG on top of LV
+    - lvresize -r -l +75%VG /dev/my_new_volume_groups/my_new_lv --> tries to add 75% of total VG size on top of LV
+    - lvresize -r -l +75%FREE /dev/my_new_volume_groups/my_new_lv --> add 75% based on the free available
+    - lvresize -r -l 75%FREE /dev/my_new_volume_groups/my_new_lv --> resize that it equals to the 75 % of the VG disk space.
+
+### Exercise 15-3 Resizing Logical Volumes
+
+1. Check current physical volume
+    vgs
+2. Check that there are any free partitions
+    lsblk 
+output:
+nvme0n2                            259:4    0    3G  0 disk 
+├─nvme0n2p1                        259:5    0    1G  0 part 
+│ └─my_new_volume_groups-my_new_lv 253:2    0  508M  0 lvm  /files
+├─nvme0n2p2                        259:6    0  500M  0 part 
+├─nvme0n2p3                        259:7    0  500M  0 part 
+└─nvme0n2p4                        259:8    0  500M  0 part 
+
+3. Extend the VG
+    vgextend <VG_name> <PV_name>
+
+Check the PVs which are used:
+sudo pvs
+  PV             VG                   Fmt  Attr PSize    PFree  
+  /dev/nvme0n1p3 rhel                 lvm2 a--   <39.00g      0 
+  /dev/nvme0n2p1 my_new_volume_groups lvm2 a--  1020.00m 512.00m
+
+If try to use the used one, will get:
+Physical volume '/dev/nvme0n2p1' is already in volume group 'my_new_volume_groups'
+  Unable to add physical volume '/dev/nvme0n2p1' to volume group 'my_new_volume_groups'
+  /dev/nvme0n2p1: physical volume not initialized.
+
+Then use the right volume
+    sudo vgextend my_new_volume_groups /dev/nvme0n2p2
+Check with sudo pvs
+Output:
+  PV             VG                   Fmt  Attr PSize    PFree  
+  /dev/nvme0n1p3 rhel                 lvm2 a--   <39.00g      0 
+  /dev/nvme0n2p1 my_new_volume_groups lvm2 a--  1020.00m 512.00m
+  /dev/nvme0n2p2 my_new_volume_groups lvm2 a--   496.00m 496.00m
+
+And now check with vgs
+  VG                   #PV #LV #SN Attr   VSize   VFree   
+  my_new_volume_groups   2   1   0 wz--n-   1.48g 1008.00m
+  rhel                   1   2   0 wz--n- <39.00g       0
+
+We can see that the total free size of the VG was increased. 
+
+4. Check the size of the current LV file system
+    df -h
+Output:
+/dev/mapper/rhel-root                        36G  7.2G   28G  21% /
+devtmpfs                                    1.8G     0  1.8G   0% /dev
+tmpfs                                       1.8G   84K  1.8G   1% /dev/shm
+tmpfs                                       725M  1.8M  723M   1% /run
+tmpfs                                       1.0M     0  1.0M   0% /run/credentials/systemd-journald.service
+/dev/nvme0n1p2                              960M  592M  369M  62% /boot
+/dev/sr0                                    9.5G  9.5G     0 100% /repo
+tmpfs                                       363M  144K  362M   1% /run/user/1000
+/dev/mapper/my_new_volume_groups-my_new_lv  466M   14K  437M   1% /files
+tmpfs                                       363M   56K  363M   1% /run/user/0
+
+5. Add 50% of free space to the LV.
+    lvextend -r -l +50%FREE /dev/my_new_volume_groups/my_new_lv
+Output:
+File system ext4 found on my_new_volume_groups/my_new_lv mounted at /files.
+  Size of logical volume my_new_volume_groups/my_new_lv changed from 508.00 MiB (127 extents) to 1012.00 MiB (253 extents).
+  Extending file system ext4 to 1012.00 MiB (1061158912 bytes) on my_new_volume_groups/my_new_lv...
+resize2fs /dev/my_new_volume_groups/my_new_lv
+resize2fs 1.47.1 (20-May-2024)
+Filesystem at /dev/my_new_volume_groups/my_new_lv is mounted on /files; on-line resizing required
+old_desc_blocks = 4, new_desc_blocks = 8
+The filesystem on /dev/my_new_volume_groups/my_new_lv is now 1036288 (1k) blocks long.
+
+resize2fs done
+  Extended file system ext4 on my_new_volume_groups/my_new_lv.
+  Logical volume my_new_volume_groups/my_new_lv successfully resized.
+
+6. Check with: vgs, lvs, pvs, df -h
+
+vgs
+sudo vgs
+  VG                   #PV #LV #SN Attr   VSize   VFree  
+  my_new_volume_groups   2   1   0 wz--n-   1.48g 504.00m
+  rhel                   1   2   0 wz--n- <39.00g      0 
+
+Free space was reduced in twice
+
+lvs
+ LV        VG                   Attr       LSize    Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  my_new_lv my_new_volume_groups -wi-ao---- 1012.00m                                                    
+  root      rhel                 -wi-ao----   35.08g                                                    
+  swap      rhel                 -wi-ao----    3.91g
+
+Can see that the LV size was increased
+
+pvs
+  PV             VG                   Fmt  Attr PSize    PFree  
+  /dev/nvme0n1p3 rhel                 lvm2 a--   <39.00g      0 
+  /dev/nvme0n2p1 my_new_volume_groups lvm2 a--  1020.00m   8.00m
+  /dev/nvme0n2p2 my_new_volume_groups lvm2 a--   496.00m 496.00m
+
+Can see there is less Free space now in the PV /dev/nvme0n2p1
+
+df -h
+/dev/mapper/my_new_volume_groups-my_new_lv  938M   14K  889M   1% /files
+
+see that now the size was increased
+Note: compare all these with the above output before resizing
+
+### Exercise 15-4 Removing a VG from a PV
+
+1. Can clean the previous partitions and mounts, from previous tasks
+2. Create 2 partitions with the allowed/desire size. 
+nvme0n2       259:4    0    3G  0 disk 
+├─nvme0n2p1   259:5    0    1G  0 part 
+└─nvme0n2p2   259:6    0    1G  0 part
+3. Create a VG
+    vgcreate vg_for_resize_demo /dev/nvme0n2p1
+4. Create a LV with 100% space of VG
+    sudo lvcreate -L 1G -n lv_for_resize_demo_vg_group vg_for_resize_demo
+5. Extend a VG
+    vgextend vg_for_resize_demo /dev/nvme0n2p2
+6. Check with vgs
+    VG                 #PV #LV #SN Attr   VSize   VFree   
+    rhel                 1   2   0 wz--n- <39.00g       0 
+    vg_for_resize_demo   2   1   0 wz--n-   1.99g 1020.00m
+pvs
+    /dev/nvme0n2p1 vg_for_resize_demo lvm2 a--  1020.00m       0 
+    /dev/nvme0n2p2 vg_for_resize_demo lvm2 a--  1020.00m 1020.00m
+
+We can see that the extents on the /dev/nvme0n2p2 are not used: 1020.00m
+
+7. Now, let's extend the logical volume of the volume group by taking the space from the PV
+    sudo lvextend -L +500MiB /dev/vg_for_resize_demo/lv_for_resize_demo_vg_group /dev/nvme0n2p2
+
+Check with pvs
+  PV             VG                 Fmt  Attr PSize    PFree  
+  /dev/nvme0n1p3 rhel               lvm2 a--   <39.00g      0 
+  /dev/nvme0n2p1 vg_for_resize_demo lvm2 a--  1020.00m      0 
+  /dev/nvme0n2p2 vg_for_resize_demo lvm2 a--  1020.00m 520.00m
+
+we can see the nvme0n2p2 was half reduced
+Now with vgs
+VG                 #PV #LV #SN Attr   VSize   VFree  
+  rhel                 1   2   0 wz--n- <39.00g      0 
+  vg_for_resize_demo   2   1   0 wz--n-   1.99g 520.00m
+
+Can see that less free space for extend available across VG. 
+
+and with lvs
+  LV                          VG                 Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync 
+  lv_for_resize_demo_vg_group vg_for_resize_demo -wi-a-----  1.48g
+
+We can see that the size of the vg_for_resize_demo was increased
+before was as:
+  lv_for_resize_demo_vg_group vg_for_resize_demo -wi-a----- 1020.00m 
+
+See with lsblk now
+nvme0n2                                            259:4    0    3G  0 disk 
+├─nvme0n2p1                                        259:5    0    1G  0 part 
+│ └─vg_for_resize_demo-lv_for_resize_demo_vg_group 253:2    0  1.5G  0 lvm  
+└─nvme0n2p2                                        259:6    0    1G  0 part 
+  └─vg_for_resize_demo-lv_for_resize_demo_vg_group 253:2    0  1.5G  0 lvm  
+
+7.1 Check the file system lsblk -f
+
+8. Create a file system
+    mkfs.ext4 /dev/vg_for_resize_demo/lv_for_resize_demo_vg_group
+8.1 Check the file system now
+    lsblk -f
+
+9. Mount temporary LV, VG to /mnt-temp
+    mount /dev/vg_for_resize_demo/lv_for_resize_demo_vg_group /mnt-temp
+
+9.1 Check with lsblk if mounted
+10. Check the disk space
+    df -h
+Output:
+Filesystem                                                  Size  Used Avail Use% Mounted on
+/dev/mapper/rhel-root                                        36G  7.2G   28G  21% /
+devtmpfs                                                    1.8G     0  1.8G   0% /dev
+tmpfs                                                       1.8G   84K  1.8G   1% /dev/shm
+tmpfs                                                       725M  1.8M  723M   1% /run
+tmpfs                                                       1.0M     0  1.0M   0% /run/credentials/systemd-journald.service
+/dev/nvme0n1p2                                              960M  592M  369M  62% /boot
+/dev/sr0                                                    9.5G  9.5G     0 100% /repo
+tmpfs                                                       363M  140K  362M   1% /run/user/1000
+/dev/mapper/vg_for_resize_demo-lv_for_resize_demo_vg_group  1.5G   24K  1.4G   1% /mnt-temp
+tmpfs                                                       363M   56K  363M   1% /run/user/0
+
+11. Now, if the one LV has the exact same free space as another one:
+PV             VG                 Fmt  Attr PSize    PFree  
+  /dev/nvme0n1p3 rhel               lvm2 a--   <39.00g      0 
+  /dev/nvme0n2p1 vg_for_resize_demo lvm2 a--  1020.00m      0 
+  /dev/nvme0n2p2 vg_for_resize_demo lvm2 a--  1020.00m 520.00m
+
+We can move the one LV to another with 
+    pvmove -v /dev/nvme0n2p1 /dev/nvme0n2p2
+
+Otherwise it gives:
+  activation/volume_list configuration setting not defined: Checking only host tags for vg_for_resize_demo/lv_for_resize_demo_vg_group.
+  Moving 255 extents of logical volume vg_for_resize_demo/lv_for_resize_demo_vg_group.
+  Insufficient free space: 255 extents needed, but only 130 available
+  Unable to allocate mirror extents for vg_for_resize_demo/pvmove0.
+  Failed to convert pvmove LV to mirrored
+
+12. Check with pvs
+13. Remove unused LV with vgreduce

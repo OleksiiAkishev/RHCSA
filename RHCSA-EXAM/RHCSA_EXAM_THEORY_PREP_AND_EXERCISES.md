@@ -2063,3 +2063,94 @@ Otherwise it gives:
 
 12. Check with pvs
 13. Remove unused LV with vgreduce
+
+# Chapter 16 - Basic Kernel Management
+
+Kernel = core, and in Linux, more precisely, the kernel is the core of the operating system.
+
+              USER
+               ↓
+        Applications / Shell
+               ↓
+       ┌───────────────┐
+       │ Linux KERNEL  │  ← core of the OS
+       └───────────────┘
+          ↓    ↓    ↓
+        CPU   RAM  Disk/NIC
+
+The kernel's job is essentially to manage the hardware and provide controlled access to it for programs.
+Example, when execute: cat /etc/hosts
+what happens behind: cat -> system call -> Kernel -> storage driver -> disk
+
+## For Analazying kernel activities
+There are several utilities to analyze kernel.
+    - dmesg utility (print or control the kernel ring buffer)
+    - /proc file system
+    - uname utility
+
+A ring buffer is a small, fixed-size area of memory that works like a circular log.
+[1] [2] [3] [4] [5]
+ ↑
+oldest
+A new message arrives: messgae 6. Instead of growing forever, it overwrites the oldest message:
+[6] [2] [3] [4] [5]
+ ↑
+new oldest
+
+Modern kernels treat the ring buffer as a collection of log records/messages, not literally a simple array of fixed-size “cells.” A single kernel message can contain quite a bit of text. The kernel ring buffer is a fixed-size circular storage area containing kernel log records. When it fills, old records are discarded to make room for new ones.
+
+**Example of utilities usage**
+dsmeg OR journalctl --dmesg OR journactl -k
+
+Where dmesg shows the relative kernel start time, e.g:
+[ 7487.519446] EXT4-fs (dm-2): resizing filesystem from 520192 to 1036288 blocks
+[ 7487.544915] EXT4-fs (dm-2): resized filesystem to 1036288
+[ 7906.888069] vmxnet3 0000:03:00.0 ens160: intr type 3, mode 0, 3 vectors allocated
+[ 7906.888674] vmxnet3 0000:03:00.0 ens160: NIC Link is Up 10000 Mbps
+[ 8717.235762] EXT4-fs (dm-2): unmounting filesystem b22808de-16bf-4e07-8d43-847e02cbb661.
+[ 9281.795290]  nvme0n2: p1 p2
+
+But the journalctl shows the clock time
+ep 11 11:24:53 localhost.localdomain kernel: EXT4-fs (dm-2): unmounting filesystem b22808de-16bf-4e07-8d43-847e02cbb661.
+Sep 11 11:34:18 localhost.localdomain kernel:  nvme0n2: p1 p2
+Sep 11 11:34:18 localhost.localdomain kernel:  nvme0n2: p1 p2
+Sep 11 12:02:04 localhost.localdomain kernel: EXT4-fs (dm-2): mounted filesystem bc6b2032-9620-48dc-acb4-d49b5402e4f5 r/w with ordered data mode. Quota mode: none.
+Sep 12 20:18:08 localhost.localdomain kernel: vmxnet3 0000:03:00.0 ens160: intr type 3, mode 0, 3 vectors allocated
+Sep 12 20:18:08 localhost.localdomain kernel: vmxnet3 0000:03:00.0 ens160: NIC Link is Up 10000 Mbps
+
+The /proc directory can give the clear information about kernel segments. E.g., memory segments: /proc/meminfo
+
+**uname** **-a** **-r** useful command, gives name and information about current kernel
+Note: to get the specific RHEL info try: cat /etc/redhat-release
+**hostnamectl** **status**
+
+**What is the driver?**
+A hardware driver is software that knows how to communicate with a particular piece of hardware on behalf of the operating system.
+Example:
+Firefox
+   ↓
+Linux kernel: "send this network packet"
+   ↓
+Network driver: "I know how to talk to this specific NIC"
+   ↓
+Network card
+   ↓
+Ethernet/Wi-Fi
+
+## Managing Kernel Modules
+Linux modules normally loaded automatically. But in rare cases in can be done manually. To customize and load modules manually can be done from /etc/modules-load.d directory. 
+
+**lsmod** command to be used when working with kernel modules
+
+What is the **module**? - A kernel module is a separately developed piece of code that extends what the kernel can do.
+Kernel starts
+    │
+    ├── core functionality ─── always there
+    │
+    └── modules
+          ├── network driver
+          ├── USB driver
+          ├── filesystem support
+          └── etc.
+                ↑
+          loaded when needed

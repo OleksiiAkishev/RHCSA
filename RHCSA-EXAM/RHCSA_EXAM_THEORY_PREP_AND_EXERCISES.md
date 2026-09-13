@@ -178,7 +178,8 @@ h. Check result:
 i. Add new repos to the yum.repos.d
     dnf config-manager --add-repo=file:///repo/BaseOS
     If system was unregistered, register it as:
-        subscription-namger register
+        sudo subscription-manager register
+    Check with the subscription-manager status
     Once promted, type user name and password which is used on the Red Hat portal for dev subscription
 
     if good, add the next repo:

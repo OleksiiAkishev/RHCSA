@@ -273,3 +273,8 @@ Configure your server to automatically mount these partitions using the UUID of 
 
 ## Chapter 15 - Managing Logical Volumes
 Create a 500-MB logical volume named lvgroup. Format it with the XFS file system and mount it persistently on /groups. Reboot your server to verify that the mount works. After rebooting, add another 250 MB to the lvgroup volume that you just created. Verify that the file system resizes as well while resizing the volume. Verify that the volume extension was successful.
+
+## Chapter 16 - Basic Kernel Management
+Find out whether a new version of the kernel is available. If so, install it and reboot your computer so that it is used. Use the appropriate command to show recent events that have been logged by the kernel. Locate the kernel module that is used by your network card. Find out whether it has options. Try loading one of these kernel module options manually; if that succeeds, take the required measures to load this option persistently.
+
+## Chapter 17 - Managing and Understanding the Boot Procedure

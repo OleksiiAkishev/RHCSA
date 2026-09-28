@@ -2155,3 +2155,64 @@ Kernel starts
           └── etc.
                 ↑
           loaded when needed
+
+**modinfo** check more info about specific module. Ex: sudo modinfo fuse
+**modprobe** manuall kernel modules load with all dependencies
+**modprobe -r** unloads kernel modules, considering dependencies
+
+### Exercise 16-1 Managing Kernel Modules from the Command Line
+
+1. Check the modules
+    lsmod | less
+
+2. Load vfat module
+    modprobe vfat
+
+3. Verify that module is loaded
+    lsmod | grep vfat
+
+output:
+/$ sudo lsmod | grep vfat --> empty
+/$ sudo modprobe vfat
+/$ sudo lsmod | grep vfat :
+vfat                   28672  0
+fat                   114688  1 vfat
+
+4. Check the details
+    modinfo vfat
+
+5. Try to unload **XFS** module
+    modeprobe -r xfs
+output:
+modprobe: FATAL: Module xfs is in use.
+
+6. Unload the **vfat** module and check with ls
+    modprobe -r vfat
+    lsmod | grep vfat
+
+## Drivers availability check
+**lspci** shows all the hardware devices that have been detected. E.g. lspci -k --> shows kernel modules
+
+### Exercise 16-2 Loading Kernel Modules with Parameters
+
+1. Check if cdrom module is loaded
+    lsmod | grep cdrom
+output:
+cdrom                  90112  2 isofs,sr_mod
+
+2. Try to unload module
+    modprobe -r cdrom
+Won't work as it is in used.
+out: modprobe: FATAL: Module cdrom is in use.
+
+3. See the module details, find one which is the debug
+    sudo modinfo cdrom | grep debug
+Output:
+parm:           debug:bool
+
+4. To set that parameter to true. Create a file under /etc/modprobe.d/cdrom.conf with the following content: options cdrom debug=1
+
+## Linux kernel upgrades 
+**dnf upgrade kernel** command to upgrade the kernel of the Linux
+
+## Chapter 17 - Managing and Understanding the Boot Procedure

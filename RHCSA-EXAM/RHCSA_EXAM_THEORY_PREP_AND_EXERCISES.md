@@ -2216,3 +2216,68 @@ parm:           debug:bool
 **dnf upgrade kernel** command to upgrade the kernel of the Linux
 
 ## Chapter 17 - Managing and Understanding the Boot Procedure
+
+Systemd **target** is a group of units that belong together. 
+**emergency.target:** In this target, only a minimal number of units are started, just enough to fix your system if something is seriously wrong. You’ll find that it is quite minimal because some important units are not started. **rescue.target:** This target starts all units that are required to get a fully operational Linux system. It doesn’t start nonessential services, though. 
+**multi-user.target:** This target is often used as the default target a system starts in. It starts everything that is needed for full system functionality and is commonly used on servers. 
+**graphical.target:** This target also is commonly used. It starts all units that are needed for full functionality, as well as a graphical interface.
+
+### Check targets on the machine
+**systemctl -t target --all**
+
+### Exercise 17-1 Isolating Targets
+Note: be careful with this task, read the man at first. 
+
+1. Check if any targets that allow the isolation
+    ls /usr/lib/systemd/system | grep Isolate *.target
+
+2. Switches to the rescue target
+    systemctl isolate rescue.target
+
+3. Restarts the server
+    systemctl isolate reboot.target
+
+Check the current target which is set **systemctl get-default**
+Set the target **systemctl set-default <TARGET>**
+To set any target by default we neeed to be sure that it is installed. We can check the group list with 
+    **sudo dnf group list**
+
+## Understanding the GRUB 2
+
+The GRUB 2 boot loader makes sure you can boot Linux.
+* boot loader: is a program that starts at very beginning while staring a PC and it takes care of loading the OS kernel and initramfs.
+* GRUB 2: is a boot loader which is installed on most systems that need to start Linux. 
+* kernel: is a heart of the OS.
+* initramfs: contains drivers that are needed to start your server. It contains a mini file system that is mounted during boot.
+
+To edit a GRUB file, check /etc/default/grub. 
+The parameter **GRUB_ENABLE_BLSCFG=true** means that the changes to the GRUB 2 boot loader to be done to the files at /boot/loader/entries, e.g.
+    61f780134bfd4b5797dcfcc6956dd34a-0-rescue.conf
+    61f780134bfd4b5797dcfcc6956dd34a-6.12.0-124.8.1.el10_1.x86_64.conf
+    61f780134bfd4b5797dcfcc6956dd34a-6.12.0-211.22.1.el10_2.x86_64.conf
+    61f780134bfd4b5797dcfcc6956dd34a-6.12.0-211.43.1.el10_2.x86_64.conf
+
+If GRUB_ENABLE_BLSCFG is false, the files won't be taken into consideration, and only the default/grub file is considered.
+
+To apply changes, the following command to be used:
+    **grub2-mkconfig -o /boot/grub2/grub.cfg**
+
+Parameter **GRUB_CMDLINE_LINUX**, e.g
+    GRUB_CMDLINE_LINUX="crashkernel=2G-64G:256M,64G-:512M resume=UUID=f753112b-7583-4e7a-ab9e-14b89cb0389a rd.lvm.lv=rhel/root rd.lvm.lv=rhel/swap rhgb quiet"
+Defines how the Linux kernel has to be started.
+The rhgb and quiet options to be removed to show all the logs while booting.
+
+**GRUB_TIMEOUT**
+Defines how much time the loader waits for user to select any options before it proceed automatically. 
+E.g. GRUB_TIMEOUT=5
+
+Find boot possible argumets to be used **man 7 bootparam**
+
+### Exercise 17-2 Applying Modifications to GRUB 2
+1. Remove the rhgb and quiet from the /etc/default/grub and also set the GRUB_ENABLE_BLSCFG to false. And the GRUB_TIMEOUT to the 10 sec
+2. To write new changes
+    grub2-mkconfig -o /boot/grub2/grub.cfg
+3. Reboot and verify that changes are taken into consideration
+
+
+# Chapter 18 - Essential Troubleshooting Skills

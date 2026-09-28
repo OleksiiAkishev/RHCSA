@@ -278,3 +278,6 @@ Create a 500-MB logical volume named lvgroup. Format it with the XFS file system
 Find out whether a new version of the kernel is available. If so, install it and reboot your computer so that it is used. Use the appropriate command to show recent events that have been logged by the kernel. Locate the kernel module that is used by your network card. Find out whether it has options. Try loading one of these kernel module options manually; if that succeeds, take the required measures to load this option persistently.
 
 ## Chapter 17 - Managing and Understanding the Boot Procedure
+Lab 17.1 Set the default target to multi-user.target. Reboot to verify this target is working as expected. 
+
+Lab 17.2 Change your GRUB 2 boot configuration so that you will see boot messages upon startup.

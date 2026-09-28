@@ -86,3 +86,15 @@ RHCSA candidates should be able to accomplish the tasks below without assistance
 
 > Note: As with all Red Hat performance-based exams, configurations must persist after reboot without intervention.
 
+
+
+# Tips from Book
+
+## Tip 1
+On the RHCSA exam, you are likely to enable a couple of services. It is a good idea to read through the exam questions, identify the services that need to be enabled, and enable them all at once to make sure that they are started automatically when you restart. This approach prevents your being so focused on configuring the service that you completely forget to enable it.
+
+## Tip 2
+On the exam, you want to know immediately if something does not work out well. To accomplish this, it is a good idea to remove the rhgb and quiet boot options. Without them, you will not have to guess why your server takes a long time after a restart; you’ll just be able to see.
+
+## Tip 3
+You should know how to apply changes to the GRUB configuration, but you should also know that the default GRUB 2 configuration works fine as it is for almost all computers. So, you will probably never have to apply any changes at all!

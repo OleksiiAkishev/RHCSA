@@ -98,3 +98,7 @@ On the exam, you want to know immediately if something does not work out well. T
 
 ## Tip 3
 You should know how to apply changes to the GRUB configuration, but you should also know that the default GRUB 2 configuration works fine as it is for almost all computers. So, you will probably never have to apply any changes at all!
+
+## Tip 4
+Troubleshooting has always been a part of the RHCSA exam. If you encounter an issue, make sure that you can identify in which phase of the boot procedure it occurs and what you can do to fix it.
+

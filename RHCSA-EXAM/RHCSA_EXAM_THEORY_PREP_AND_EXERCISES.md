@@ -9,6 +9,9 @@ b.List the contents of an archive
 c.Extract an archive 
 d.Compress and uncompress archives
 
+# Chapter 3 — File management
+
+
 
 # Chapter 9 Managing Softwares
 
@@ -2281,3 +2284,54 @@ Find boot possible argumets to be used **man 7 bootparam**
 
 
 # Chapter 18 - Essential Troubleshooting Skills
+
+## Understanding the RHEL 10 boot procedure
+
+1. **Performing POST:** The machine is powered on. From the system firmware, which can be the modern Unified Extended Firmware Interface (UEFI) or the classical Basic Input/Output System (BIOS), the Power-On Self-Test (POST) is executed, and the hardware that is required to start the system is initialized.
+2. **Selecting the bootable device:** Either from the UEFI boot firmware or from the BIOS, a bootable device is located.
+3. **Loading the boot loader:** From the bootable device, a boot loader is located. On RHEL, this is usually GRUB 2.
+4. **Loading the kernel:** The boot loader may present a boot menu to the user or can be configured to automatically start a default operating system. To load Linux, the kernel is loaded together with the initramfs. The initramfs contains kernel modules for all hardware that is required to boot, as well as the initial scripts required to proceed to the next stage of booting. On RHEL 10, the initramfs contains a complete operational system (which may be used for troubleshooting purposes).
+5. **Starting /sbin/init:** Once the kernel is loaded into memory, the first of all processes is loaded, but still from the initramfs. This is the /sbin/init process, which on RHEL is linked to Systemd. The systemd-udevd daemon is loaded as well to take care of further hardware initialization. All this is still happening from the initramfs image.
+6. **Processing initrd.target:** The Systemd process executes all units from the initrd.target, which prepares a minimal operating environment, where the root file system on disk is mounted on the /sysroot directory. At this point, enough is loaded to pass to the system installation that was written to the hard drive.
+7. **Switching to the root file system:** The system switches to the root file system that is on disk and at this point also can load the Systemd process from disk.
+8. **Running the default target:** Systemd looks for the default target to execute and runs all of its units. In this process, a login screen is presented, and the user can authenticate. Note that the login prompt can be prompted before all Systemd unit files have been loaded successfully. So, seeing a login prompt does not necessarily mean that your server is fully operational yet; services may still be loaded in the background.
+
+## Boot Phase Configuration and Troubleshooting Overview
+Boot Phase                          | Configuring It                                                                                | Fixing It
+POST                                  Hardware configuration (F2, Esc, F10, or another key).                                          Replace hardware.
+Selecting the bootable device         BIOS/UEFI configuration or hardware boot menu.                                                  Replace hardware or use rescue system.
+Loading the boot loader               grub2-install and edits to /etc/defaults/grub.                                                  Use the GRUB boot prompt and edits to /etc/defaults/grub, followed by grub2-mkconfig.                                     
+Loading the kernel                    Edits to the GRUB configuration and /etc/ dracut.conf.                                          Use the GRUB boot prompt and edits to /etc/defaults/grub, followed by grub2-mkconfig.                                     
+Starting /sbin/init                   Compiled into initramfs.                                                                        Use the init = kernel boot argument, rd.break kernel boot argument.
+Processing initrd.target              Compiled into initramfs.                                                                        Use the dracut command. (You won’t often have to troubleshoot this.)
+Switch to the root file system        Edits to the /etc/fstab file.                                                                   Apply edits to the /etc/fstab file.
+Running the default target            Using systemctl set-default to create the /etc/systemd/system/default.target symbolic link.     Start the emergency.target or rescue.target as a kernel boot argument.
+
+
+### Exercise 18-1 Exploring Troubleshooting Targets
+
+1. Make sure the root user has the passwd before to start this exercise.
+2. (Re)start your computer. When the GRUB menu appears (press ESC quickly to get in), select the first line in the menu and press e. 
+3. Scroll down to the line that starts with linux $(root)/vmlinuz. At the end of this line, type systemd.unit=rescue.target. Also remove the options rhgb quiet from this line. Press Ctrl-X to boot with these modifications. 
+4. Enter the root password when you are prompted for it. 
+5. Type systemctl list-units. This shows all unit files that are currently loaded. 
+6. Type systemctl show-environment. This shows current shell environment variables. 
+7. Type systemctl reboot to reboot your machine.
+8. When the GRUB menu appears, press e again to enter the editor mode. At the end of the line that loads the kernel, type systemd.unit=emergency.target. Press Ctrl-X to boot with this option. 
+9. When prompted for it, enter the root password to log in. 
+10. After successful login, type systemctl list-units. Notice that the number of unit files loaded is reduced to a bare minimum. 
+11. Type reboot to restart your system into the default target.
+
+### Exercise 18-2 Using the Rescue Option 
+1. Restart your server from the installation disk. Select the Troubleshooting menu option. 
+2. From the Troubleshooting menu, select Rescue a Red Hat Enterprise Linux System. This prompts you to press Enter to start the installation. Do not worry; this option does not overwrite your current configuration, it just loads a rescue system. 
+3. The rescue system now prompts you that it will try to find an installed Linux system and mount on /mnt/sysroot. Press 1 to accept the Continue option. 
+4. If a valid Red Hat installation is found, you are prompted that your system has been mounted under /mnt/sysroot. At this point, you can press Enter to access the rescue shell. 
+5. Your Linux installation at this point is accessible through the /mnt/sysroot directory. Type **chroot /mnt/sysroot**. At this point, you have access to your root file system and you can access all tools that you need to repair access to your system. 
+6. Type exit to quit the chroot environment, and type reboot to restart your machine in a normal mode.
+
+Note: chroot /mnt/sysroot command brings you to the environment from where all commands are available and even man page can be opened. 
+
+## Reinstalling GRUB Using a Rescue Disk
+- Make sure that you have made the contents of the /mnt/sysroot directory available to your current working environment, using chroot as described before. 
+- Use the grub2-install command, followed by the name of the device on which you want to reinstall GRUB 2. So on a KVM virtual machine, the command to use is grub2-install /dev/vda, and on a physical server or a VMware or Virtual Box virtual machine, it is either grub2-install /dev/sda or grub2-install /dev/nvme0n1.

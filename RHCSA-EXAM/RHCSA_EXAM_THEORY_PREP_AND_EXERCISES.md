@@ -2335,3 +2335,24 @@ Note: chroot /mnt/sysroot command brings you to the environment from where all c
 ## Reinstalling GRUB Using a Rescue Disk
 - Make sure that you have made the contents of the /mnt/sysroot directory available to your current working environment, using chroot as described before. 
 - Use the grub2-install command, followed by the name of the device on which you want to reinstall GRUB 2. So on a KVM virtual machine, the command to use is grub2-install /dev/vda, and on a physical server or a VMware or Virtual Box virtual machine, it is either grub2-install /dev/sda or grub2-install /dev/nvme0n1.
+
+## Re-creating the Initramfs Using a Rescue Disk
+Use the **dracut** command. If used with no arguments, this command creates a new initramfs for the kernel currently loaded.
+
+### Exercise 18-3 Reset a root password via GRUB
+
+1. When in GRUB, press ESC quickly and then e to see the options.
+2. The line which loads the kernel add the line:
+    init=/bin/bash
+And press Ctrl-X
+3. Once a root shell is opened
+    mount -o remount,rw /
+To get read/write to the root file system.
+4. Now the new passwd can be entered and set for the root user
+5. Make sure that the SELinux security labels are set correctly, after reboot, for that type:
+    touch /.autorelabel
+6. Type **exec /usr/lib/systemd/systemd** to replace /bin/bash (which is the current PID 1) with Systemd. This will start your system the normal way. Notice that you cannot use the reboot command because /bin/bash is currently PID 1 and the reboot command requires Systemd as the PID 1.
+    Note: Getting out of an init=/bin/bash environment is a bit special because Systemd is not currently loaded. As a result, you cannot just use the reboot command to restart because reboot invokes Systemd. Typing exit is also not an option because you would exit from the PID 1 and leave the kernel with no PID 1. Therefore, you have to manually start Systemd.
+7. Verify that you can log in as the root user after rebooting.
+
+# Chapter 19 - An Introduction to Automation with Bash Shell Scripting

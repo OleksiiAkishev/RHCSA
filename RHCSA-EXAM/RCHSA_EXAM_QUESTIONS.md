@@ -298,3 +298,26 @@ a. logger b. dmesg c. klogd d. journald   . Which command enables you to find th
 
 # Chapter 18 - Essential Troubleshooting Skills
 . Which of the following comes first in the Red Hat Enterprise Linux 10 boot procedure? a. Systemd b. Kernel c. GRUB 2 d. Initramfs   . You have just entered a kernel argument on the GRUB 2 boot prompt. Pressing which key(s) enables you to start with this boot argument? a. ZZ b. Ctrl-X c. Esc d. Enter   . Your initramfs seems faulty and cannot initialize the LVM volumes on your disk. Which configuration file should you check for options that are used? a. /etc/dracut.d/dracut.conf b. /etc/dracut.conf c. /etc/sysconfig/dracut d. /etc/mkinitrd.conf   . You do not have the root password and want to reset it. Which kernel argument offers the recommended way to reset it? a. init=/bin/bash b. init=/bin/sh c. systemd.unit=emergency.target d. rd.break   . You want to see exactly what is happening on system boot. Which two boot options should you remove from the GRUB 2 boot prompt? (Choose two.) a. rhgb b. logo c. quiet d. silent   . You want to enter the most minimal troubleshooting mode where as few services as possible are loaded. Which boot argument should you use? a. systemd.unit=break.target b. systemd.unit=emergency.target c. systemd.unit=rescue.target d. 1   . Which of the following situations can be resolved only by using a rescue disk? a. The kernel stops loading. b. The initramfs stops loading. c. You never get to a GRUB 2 boot prompt. d. You are prompted to enter the root password for maintenance mode.   . You have entered a troubleshooting mode, and disk access is read-only. What should you do? a. Restart the troubleshooting mode and pass the rw boot option to the kernel. b. Use the rd.break boot argument to manually start into the initramfs mode. c. Use mount -o remount,rw / d. Use mount /   . Your server shows a blinking cursor only while booting. No GRUB 2 menu is available. What is the first step in troubleshooting this issue? a. From a rescue disk, try the Boot from local disk option. b. Start a rescue environment and reinstall GRUB. c. Start a rescue environment and re-create the initramfs. d. Use the rd.break boot argument.    . After resetting the root password from an environment that was started with the init=/bin/bash kernel boot argument, how can you restart the system normally? a. reboot b. systemctl isolate multi-user.target c. exec /usr/lib/systemd/system d. exit
+
+# Chapter 19 - An Introduction to Automation with Bash Shell Scripting
+. Which line should every Bash shell script start with? a. /bin/bash b. #!/bin/bash c. !#/bin/bash d. !/bin/bash   . What is the purpose of the exit 0 command that can be used at the end of a script? a. It informs the parent shell that the script executed without any problems. b. It makes sure the script can be stopped properly. c. It is required only if a for loop has been used to close the for loop structure. d. It is used to terminate a conditional structure in the script.   . How do you stop a script to allow a user to provide input? a. pause b. break c. read d. stop   . Which line stores the value of the first argument that was provided when starting a script in the variable NAME? a. NAME = $1 b. $1 = NAME c. NAME = $@ d. NAME=$1   . What is the best way to distinguish between different arguments that have been passed into a shell script? a. $? b. $# c. $* d. $@   . What is used to close an if loop? a. end b. exit c. stop d. fi   . What is missing in the following script at the position of the dots? 
+if [ -f $1 ]
+then
+   echo "$1 is a file"
+...   [ -d $1 ]
+then
+   echo "$ 1 is a directory"
+else 
+   echo "I do not know what \$1 is"
+fi
+a. else b. if c. elif d. or
+
+What is missing in the following script at the position of the dots?
+for (( counter=100; counter>1; counter-- )); ......
+   echo $counter
+done
+exit 0
+
+a. in b. do c. run d. start
+
+Which command is used to send a message with the subject “error” to the user root if something didn’t work out in a script? a. mail error root b. mail -s error root c. mail -s error root. d. mail -s error root <.    . In a case statement, it is a good idea to include a line that applies to all other situations. Which of the following would do that? a. *) b. * c. else d. or

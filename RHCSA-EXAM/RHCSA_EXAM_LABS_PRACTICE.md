@@ -281,3 +281,6 @@ Find out whether a new version of the kernel is available. If so, install it and
 Lab 17.1 Set the default target to multi-user.target. Reboot to verify this target is working as expected. 
 
 Lab 17.2 Change your GRUB 2 boot configuration so that you will see boot messages upon startup.
+
+## Chapter 18 - Essential Troubleshooting Skills
+Restart your server and change the root password from the appropriate troubleshooting mode. In /etc/fstab, change one of the device names so that on the next reboot the file system on it cannot be mounted. Restart and fix the issue that you encounter. Use a rescue disk to bring your server up in full troubleshooting mode from the rescue disk. Re-create the initramfs.

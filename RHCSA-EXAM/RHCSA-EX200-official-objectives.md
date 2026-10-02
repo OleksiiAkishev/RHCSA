@@ -102,3 +102,8 @@ You should know how to apply changes to the GRUB configuration, but you should a
 ## Tip 4
 Troubleshooting has always been a part of the RHCSA exam. If you encounter an issue, make sure that you can identify in which phase of the boot procedure it occurs and what you can do to fix it.
 
+## Tip 5 
+According to the RHCSA objectives, you should not have to work with a rescue disk on the exam. However, as a Linux administrator, you should expect the unexpected, which is why it is a good idea to ensure that you can handle common as well as less common troubleshooting scenarios.
+
+## Tip 6
+Make sure to master this topic very well. File system–related topics have a heavy weight in the RHCSA objectives, and it is likely that you will need to create partitions and/or logical volumes and put them in /etc/fstab for automatic mounting. That also makes it possible that something will go wrong, and if that happens on the exam, you’d better make sure that you know how to fix it!

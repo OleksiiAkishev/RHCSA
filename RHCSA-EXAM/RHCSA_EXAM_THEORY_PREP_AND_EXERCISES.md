@@ -2356,3 +2356,92 @@ To get read/write to the root file system.
 7. Verify that you can log in as the root user after rebooting.
 
 # Chapter 19 - An Introduction to Automation with Bash Shell Scripting
+
+**shebang** - The characters used in a script to indicate which shell should be used for executing the code in the shell script. If no shebang is used, the script code will be interpreted by the parent shell, which may lead to errors in some cases. A shebang starts with a #, which is followed by a ! and the complete pathname of the shell, such as **#!/bin/bash**.
+
+**$PATH** answers "where should the shell search for this command?"
+**./** answers "the file is right here; execute this one."
+
+### Exercise 19-1 Writing a Simple Shell Script 
+1. Use vim to create a script with the name hello in your home directory. 
+2. Give this script the contents (any executable) and close it. 
+3. Use ./hello to try to execute it. You’ll get a “permission denied” error message. 
+4. Type chmod +x hello and try to execute it again. You’ll see that it now works.
+
+Example of arguments count in loop:
+bash` 
+#!/bin/bash
+
+echo you have entered $# arguments
+
+for i in $@
+do
+  echo $i
+done
+
+exit 0
+`
+
+- $# is a counter that shows how many arguments were used when starting the script. 
+- $@ refers to all arguments that were used when starting the script.
+
+## Script Example to check the input arggument
+#!/bin/bash
+
+if [ -z $1 ]; then
+        echo enter a name
+        read NAME
+else
+        NAME=$1
+fi
+echo you have entered the text as $NAME
+exit 0
+
+where: 
+    **-z** checks whether a string has zero length (empty).
+    **test** is a shell command used to check a condition. Written in 2 ways **test** or **[...]**
+Thus [ -z $1 ] --> **test** if **$1** has zero length --> ask to enter a name ELSE take the input  
+Can try directly in shell:
+    test -f hello
+and
+    echo $? 
+to check the exit status of the last command
+
+
+### Exercise 19-4 Using if ... then ... else
+1. Start an editor and create a script using filechk as the name. 
+2. Add the follwoing contents to this script:
+bash`
+#!/bin/bash
+
+if [ -f $1 ]; then
+   echo The input has type of file
+elif [ -d $1 ]; then
+   echo The input has type of directory
+else
+   echo The input \$1 is unknown!
+fi
+
+exit 0
+`
+
+3. Run a couple of tests with it, where inputs are real files or folders or empty/random chars
+
+## Example one liner for
+
+for i in {100..104}; do ping -c 1 192.168.4.$i > /dev/null && echo the 192.168.4.$i is up; done
+
+## Example with case
+
+case "$1" in
+    start)
+        start;;
+    stop)
+        stop;
+    *)
+        echo default
+esac
+
+## Scripts debugging
+run script with **-x** option it shows then line by line what it tries to do
+e.g: bash -x /.filechk

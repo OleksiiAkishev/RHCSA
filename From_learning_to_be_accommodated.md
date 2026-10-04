@@ -81,6 +81,13 @@ Adds the output of ls (or any other command) in the current file.
 :%s/old/new/g
 Replaces all occurrences of old with new.
 
+## Additional
+dd in command mode (after pressing escape) will cut the line, p in command mode will paste.
+Update:
+For a bonus, d and then a movement will cut the equivalent of that movement, so dw will cut a word, d<down-arrow> will cut this line and the line below, d50w will cut 50 words.
+yy is copy line, and works like dd.
+D cuts from cursor to end of line.
+
 # Archive
 
 -   Create archive: tar -cf archivename.tar /files-you-want-to-archive
@@ -182,4 +189,20 @@ Ex: with root : tail -f /var/log/secure
 Note: to print short description of the man for the command:
 - sudo mandb: download and install man DBs
 - man -k <key word> --> outputs the match
+    man -k it is the same as whatis <command> --> they both gives the clarity how many man pages you have, it may happend that the same command is responsible for the different purposes
+Example:
+man -f printf
+printf (1)           - format and print data
+printf (3)           - formatted output conversion
+whatis printf
+printf (1)           - format and print data
+printf (3)           - formatted output conversion
 
+To get page
+man 1 printf
+man 3 printf
+
+- options man -aw print from where those commands pages come from
+man -aw printf
+/usr/share/man/man1/printf.1.gz
+/usr/share/man/man3/printf.3.gz

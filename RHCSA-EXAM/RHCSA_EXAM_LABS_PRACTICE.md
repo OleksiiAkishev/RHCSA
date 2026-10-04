@@ -284,3 +284,6 @@ Lab 17.2 Change your GRUB 2 boot configuration so that you will see boot message
 
 ## Chapter 18 - Essential Troubleshooting Skills
 Restart your server and change the root password from the appropriate troubleshooting mode. In /etc/fstab, change one of the device names so that on the next reboot the file system on it cannot be mounted. Restart and fix the issue that you encounter. Use a rescue disk to bring your server up in full troubleshooting mode from the rescue disk. Re-create the initramfs.
+
+# Chapter 19 - An Introduction to Automation with Bash Shell Scripting
+Write a script that works with arguments. If the argument one is used, the script should create a file named /tmp/one. If the argument two is used, the script should send a message containing the subject “two” to the root user. Write a countdown script. The script should use one argument (and not more than one). This argument specifies the number of minutes to count down. It should start with that number of minutes and count down second by second, writing the text “there are nn seconds remaining” at every iteration. Use sleep to define the seconds. When there is no more time left, the script should echo “time is over” and quit.

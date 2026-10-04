@@ -134,4 +134,3 @@ resolvectl query google.com
 
 
 # CHAPTER 9 — Managing Software
-

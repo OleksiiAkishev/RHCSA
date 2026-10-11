@@ -52,6 +52,7 @@ ls -al wergihl * > /tmp/lsoutput 2>&1
 
 cat /tmp/lsoutput
 ```
+Note: * --> exapnaded by shell, even before ls starts, it expands all files under specified ls path
 
 
 ## Chapter 3 — File management
